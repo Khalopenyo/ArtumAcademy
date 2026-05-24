@@ -1,3 +1,5 @@
+const { withSentryConfig } = require('@sentry/nextjs');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -34,4 +36,16 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+module.exports = withSentryConfig(nextConfig, {
+  // ---- Self-hosted GlitchTip/Bugsink targeting (FOUND-06, plan-05) ----
+  // P1 dev: developer-local Bugsink container, no upload target needed.
+  // Uncomment + populate in P7 when prod self-hosted instance exists:
+  // sentryUrl: 'https://glitchtip.your-domain.ru',
+  // org: 'videoedit-academy',
+  // project: 'web',
+  // authToken: process.env.SENTRY_AUTH_TOKEN, // source-map upload (P7)
+
+  hideSourceMaps: true,             // don't expose maps to client
+  telemetry: false,                 // disable Sentry SaaS telemetry
+  silent: !process.env.SENTRY_DSN,  // silently skip if no DSN (dev convenience)
+});
