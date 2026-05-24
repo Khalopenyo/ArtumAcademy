@@ -70,7 +70,17 @@ Two integration surfaces have documentation conflicts that require a 0.5–1 day
   5. 6-я и 11-я попытка логина за 15 минут с одного IP отвергается с 429; SmartCaptcha видна на `/register` и `/forgot-password`
 **Pitfalls prevented:** #14 (consent capture with evidence), #18 (Auth defaults), #20 (Suspense around useSearchParams on `/login?next=…`)
 **Notes:** Privacy и oferta-драфты пишутся в P2 чтобы 152-ФЗ consent text мог ссылаться на live policy URLs; финальное согласование с юристом и подписание акта — в P7 (COMP-02). До P7 текст содержит `[TODO: юрист-ревью]` маркеры в местах, требующих юридической экспертизы (реквизиты ИП, юрисдикция, retention периоды).
-**Plans:** TBD
+**Plans:** 10 plans
+- [ ] 2-01-PLAN.md — shadcn + design system foundation (layouts, primitives, brand chrome)
+- [ ] 2-02-PLAN.md — legal pages (drafts) + security headers (Permissions-Policy)
+- [ ] 2-03-PLAN.md — landing page (Hero + Program + Pricing + FAQ + footer wired)
+- [ ] 2-04-PLAN.md — course preview page `/courses/[slug]` + seed
+- [ ] 2-05-PLAN.md — SEO baseline (sitemap + robots + metadata + OG) + Lighthouse audit
+- [ ] 2-06-PLAN.md — rate-limit + captcha infrastructure (2 migrations + 2 helpers)
+- [ ] 2-07-PLAN.md — register + consent + email confirm (biggest plan; AUTH-01/02/03/04/09)
+- [ ] 2-08-PLAN.md — login + logout + (app) auth gate (AUTH-05/07/08/10 login bucket)
+- [ ] 2-09-PLAN.md — forgot/reset password (AUTH-06 + AUTH-09 second site)
+- [ ] 2-10-PLAN.md — empty dashboard + email-verification banner + AppHeader
 **UI hint:** yes
 
 ### Phase 3: Catalog + Payment Redirect (ЮKassa sandbox)
@@ -158,7 +168,7 @@ Two integration surfaces have documentation conflicts that require a 0.5–1 day
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Dev Foundations | 0/0 | Not started | — |
-| 2. Auth + Marketing Shell + 152-ФЗ Consent (dev SMTP) | 0/0 | Not started | — |
+| 2. Auth + Marketing Shell + 152-ФЗ Consent (dev SMTP) | 0/10 | Planned (PLAN.md ready) | — |
 | 3. Catalog + Payment Redirect (ЮKassa sandbox) | 0/0 | Not started | — |
 | 4. Webhook + Access Grant + Refund (sandbox) | 0/0 | Not started | — |
 | 5. Video Player + Lesson Access Control (Kinescope test) | 0/0 | Not started | — |
