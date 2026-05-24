@@ -22,6 +22,17 @@
  * Also added the `consent_purpose` enum to Database.public.Enums.
  * TODO: regenerate via `npm run db:types` when Docker is available — the
  * regen should be a no-op diff against the schema captured here.
+ *
+ * Plan-04 (P2 LAND-02) NOTE: courses + modules + lessons types are hand-patched
+ * here following the same Docker-absent fallback pattern as the P1 audit_log
+ * entry. Source-of-truth: supabase/migrations/20260522000001_init_base_tables.sql.
+ * As soon as a developer with Docker runs `npm run db:reset && npm run db:types`,
+ * this file regenerates from the live DB schema and supersedes the hand-written
+ * placeholders; the regen should be a no-op diff (column names + nullability
+ * already match the migration verbatim).
+ *
+ * TODO: regenerate via `npm run db:types` (alias for `supabase gen types ...`)
+ *       when Docker is available locally.
  */
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
@@ -113,6 +124,111 @@ export interface Database {
           key?: string;
           action?: string;
           attempted_at?: string;
+        };
+        Relationships: [];
+      };
+      courses: {
+        Row: {
+          id: string;
+          slug: string;
+          title: string;
+          description: string | null;
+          cover_url: string | null;
+          order_index: number;
+          published: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          title: string;
+          description?: string | null;
+          cover_url?: string | null;
+          order_index?: number;
+          published?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          slug?: string;
+          title?: string;
+          description?: string | null;
+          cover_url?: string | null;
+          order_index?: number;
+          published?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      modules: {
+        Row: {
+          id: string;
+          course_id: string;
+          title: string;
+          description: string | null;
+          order_index: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          course_id: string;
+          title: string;
+          description?: string | null;
+          order_index?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          course_id?: string;
+          title?: string;
+          description?: string | null;
+          order_index?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      lessons: {
+        Row: {
+          id: string;
+          module_id: string;
+          title: string;
+          description: string | null;
+          video_id: string | null;
+          duration_sec: number;
+          order_index: number;
+          is_preview: boolean;
+          published: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          module_id: string;
+          title: string;
+          description?: string | null;
+          video_id?: string | null;
+          duration_sec?: number;
+          order_index?: number;
+          is_preview?: boolean;
+          published?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          module_id?: string;
+          title?: string;
+          description?: string | null;
+          video_id?: string | null;
+          duration_sec?: number;
+          order_index?: number;
+          is_preview?: boolean;
+          published?: boolean;
+          created_at?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };
