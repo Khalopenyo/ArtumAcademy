@@ -1,8 +1,62 @@
 {
   "extends": ["next/core-web-vitals", "prettier"],
+  "plugins": ["@typescript-eslint"],
   "rules": {
     "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
     "no-console": ["warn", { "allow": ["error", "warn"] }],
-    "react/no-unescaped-entities": "off"
-  }
+    "react/no-unescaped-entities": "off",
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": ["@/lib/supabase/admin", "**/lib/supabase/admin"],
+            "message": "service_role Supabase client is server-only. Use createServerSupabase() from @/lib/supabase/server instead (RLS-bound, safe for components)."
+          },
+          {
+            "group": ["pino-pretty"],
+            "message": "pino-pretty is a dev-only transport. Use `transport: { target: 'pino-pretty' }` string form in src/lib/logger.ts — do NOT `import` it. (Direct import bundles the dev transport into client code.)"
+          }
+        ]
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "src/lib/supabase/admin.ts",
+        "src/lib/audit-log.ts",
+        "src/server/**/*.{ts,tsx}",
+        "src/app/api/**/*.{ts,tsx}",
+        "src/instrumentation.ts",
+        "sentry.*.config.{ts,tsx}"
+      ],
+      "excludedFiles": ["src/middleware.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["pino-pretty"],
+                "message": "pino-pretty is a dev-only transport. Use string-form transport target in logger.ts."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/lib/logger.ts"],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    },
+    {
+      "files": ["src/lib/supabase/admin.lint.test.ts"],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    }
+  ]
 }
