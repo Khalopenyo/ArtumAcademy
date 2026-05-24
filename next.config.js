@@ -30,6 +30,10 @@ const nextConfig = {
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+          // LEGAL-03 (plan-02): camera/microphone/geolocation/browsing-topics disabled by default.
+          // CSP intentionally NOT added here — that's LEGAL-04 (plan-06+), gated on knowing all
+          // third-party domains (Yandex SmartCaptcha + Kinescope) to avoid breaking embeds early.
+          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), browsing-topics=()' },
         ],
       },
     ];
