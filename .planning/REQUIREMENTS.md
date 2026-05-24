@@ -1,10 +1,11 @@
 # Requirements: VideoEdit Academy (M1 — MVP)
 
 **Defined:** 2026-05-24
-**Milestone:** M1 (v1.0-mvp, 4–6 недель соло)
+**Last revised:** 2026-05-24 (traceability remapped after 6 → 7 phase restructure)
+**Milestone:** M1 (v1.0-mvp, ~4–6 недель разработки + ~1–1.5 недели production prep)
 **Core Value:** Купивший пользователь должен иметь возможность смотреть оплаченный курс без перебоев и без возможности скачать видео.
 
-> Объём M1 разбит на 6 категорий и ~70 проверяемых требований. Все основаны на `.planning/PROJECT.md` (Active section) и подтверждены `.planning/research/SUMMARY.md`. Каждое требование атомарно, user-centric и проверяемо. Phase-маппинг во второй части — заполняется роадмаппером.
+> Объём M1 разбит на 6 категорий и ~84 проверяемых требований. Все основаны на `.planning/PROJECT.md` (Active section) и подтверждены `.planning/research/SUMMARY.md`. Каждое требование атомарно, user-centric и проверяемо. Phase-маппинг во второй части — пересчитан после dev-first/prod-last restructure 2026-05-24.
 
 ---
 
@@ -209,121 +210,140 @@
 
 ## Traceability
 
-> Заполнено `gsd-roadmapper` 2026-05-24. Каждое v1 требование замаплено ровно на одну фазу из `.planning/ROADMAP.md`.
+> Перепересчитано `gsd-roadmapper` 2026-05-24 после dev-first/prod-last restructure (6 → 7 phases). Каждое v1 требование замаплено ровно на одну фазу из `.planning/ROADMAP.md`. Изменения относительно первоначального маппинга помечены в колонке **«Changed»**.
 
-### Phase 1 — Foundations & Compliance Setup (10 requirements)
+### Phase 1 — Dev Foundations (6 requirements)
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| FOUND-01 | Phase 1 | Pending |
-| FOUND-02 | Phase 1 | Pending |
-| FOUND-03 | Phase 1 | Pending |
-| FOUND-04 | Phase 1 | Pending |
-| FOUND-05 | Phase 1 | Pending |
-| FOUND-06 | Phase 1 | Pending |
-| FOUND-07 | Phase 1 | Pending |
-| FOUND-08 | Phase 1 | Pending |
-| FOUND-09 | Phase 1 | Pending |
-| FOUND-10 | Phase 1 | Pending |
+> Минимально-достаточная локальная инфраструктура: env-парсер, server-only boundary, pino, audit_log, Sentry SDK с dev-DSN, RLS test harness. Production-grade FOUND items отложены в Phase 7.
 
-### Phase 2 — Auth + Marketing Shell + 152-ФЗ Consent (21 requirements)
+| Requirement | Phase | Status | Changed |
+|-------------|-------|--------|---------|
+| FOUND-02 | Phase 1 | Pending | (unchanged) |
+| FOUND-03 | Phase 1 | Pending | (unchanged) |
+| FOUND-04 | Phase 1 | Pending | (unchanged) |
+| FOUND-05 | Phase 1 | Pending | (unchanged) |
+| FOUND-06 | Phase 1 | Pending | (unchanged — dev DSN here; prod DSN switch in P7) |
+| FOUND-10 | Phase 1 | Pending | (unchanged) |
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| LEGAL-01 | Phase 2 | Pending |
-| LEGAL-02 | Phase 2 | Pending |
-| LEGAL-03 | Phase 2 | Pending |
-| LAND-01 | Phase 2 | Pending |
-| LAND-02 | Phase 2 | Pending |
-| LAND-03 | Phase 2 | Pending |
-| LAND-04 | Phase 2 | Pending |
-| LAND-05 | Phase 2 | Pending |
-| AUTH-01 | Phase 2 | Pending |
-| AUTH-02 | Phase 2 | Pending |
-| AUTH-03 | Phase 2 | Pending |
-| AUTH-04 | Phase 2 | Pending |
-| AUTH-05 | Phase 2 | Pending |
-| AUTH-06 | Phase 2 | Pending |
-| AUTH-07 | Phase 2 | Pending |
-| AUTH-08 | Phase 2 | Pending |
-| AUTH-09 | Phase 2 | Pending |
-| AUTH-10 | Phase 2 | Pending |
-| EMAIL-01 | Phase 2 | Pending |
-| EMAIL-02 | Phase 2 | Pending |
-| EMAIL-03 | Phase 2 | Pending |
+### Phase 2 — Auth + Marketing Shell + 152-ФЗ Consent (dev SMTP) (18 requirements)
 
-### Phase 3 — Catalog + Payment Redirect (12 requirements)
+> Лендинг, юридические страницы (драфты), регистрация/логин/сброс + капча + rate limit + consent. Email через Supabase default SMTP на тестовые ящики. EMAIL-* отложены в P7.
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| CRSE-01 | Phase 3 | Pending |
-| CRSE-02 | Phase 3 | Pending |
-| CRSE-03 | Phase 3 | Pending |
-| CRSE-04 | Phase 3 | Pending |
-| CRSE-05 | Phase 3 | Pending |
-| PAY-01 | Phase 3 | Pending |
-| PAY-02 | Phase 3 | Pending |
-| PAY-03 | Phase 3 | Pending |
-| PAY-04 | Phase 3 | Pending |
-| PAY-05 | Phase 3 | Pending |
-| PAY-06 | Phase 3 | Pending |
-| PAY-07 | Phase 3 | Pending |
+| Requirement | Phase | Status | Changed |
+|-------------|-------|--------|---------|
+| LEGAL-01 | Phase 2 | Pending | (unchanged — draft here, юрист sign-off in P7 via COMP-02) |
+| LEGAL-02 | Phase 2 | Pending | (unchanged — draft here, юрист sign-off in P7 via COMP-02) |
+| LEGAL-03 | Phase 2 | Pending | (unchanged) |
+| LAND-01 | Phase 2 | Pending | (unchanged) |
+| LAND-02 | Phase 2 | Pending | (unchanged) |
+| LAND-03 | Phase 2 | Pending | (unchanged) |
+| LAND-04 | Phase 2 | Pending | (unchanged) |
+| LAND-05 | Phase 2 | Pending | (unchanged) |
+| AUTH-01 | Phase 2 | Pending | (unchanged) |
+| AUTH-02 | Phase 2 | Pending | (unchanged) |
+| AUTH-03 | Phase 2 | Pending | (unchanged) |
+| AUTH-04 | Phase 2 | Pending | (unchanged) |
+| AUTH-05 | Phase 2 | Pending | (unchanged) |
+| AUTH-06 | Phase 2 | Pending | (unchanged) |
+| AUTH-07 | Phase 2 | Pending | (unchanged) |
+| AUTH-08 | Phase 2 | Pending | (unchanged) |
+| AUTH-09 | Phase 2 | Pending | (unchanged) |
+| AUTH-10 | Phase 2 | Pending | (unchanged) |
 
-### Phase 4 — Webhook + Access Grant + Refund (12 requirements)
+### Phase 3 — Catalog + Payment Redirect (ЮKassa sandbox) (11 requirements)
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| HOOK-01 | Phase 4 | Pending |
-| HOOK-02 | Phase 4 | Pending |
-| HOOK-03 | Phase 4 | Pending |
-| HOOK-04 | Phase 4 | Pending |
-| HOOK-05 | Phase 4 | Pending |
-| HOOK-06 | Phase 4 | Pending |
-| HOOK-07 | Phase 4 | Pending |
-| HOOK-08 | Phase 4 | Pending |
-| DASH-01 | Phase 4 | Pending |
-| DASH-02 | Phase 4 | Pending |
-| DASH-03 | Phase 4 | Pending |
-| DASH-04 | Phase 4 | Pending |
+> ЮKassa в sandbox (бесплатно, без оферты). Production registration (PAY-01) перенесён в P7.
 
-### Phase 5 — Video Player + Lesson Access Control (8 requirements)
+| Requirement | Phase | Status | Changed |
+|-------------|-------|--------|---------|
+| CRSE-01 | Phase 3 | Pending | (unchanged) |
+| CRSE-02 | Phase 3 | Pending | (unchanged) |
+| CRSE-03 | Phase 3 | Pending | (unchanged) |
+| CRSE-04 | Phase 3 | Pending | (unchanged) |
+| CRSE-05 | Phase 3 | Pending | (unchanged) |
+| PAY-02 | Phase 3 | Pending | (unchanged) |
+| PAY-03 | Phase 3 | Pending | (unchanged) |
+| PAY-04 | Phase 3 | Pending | (unchanged) |
+| PAY-05 | Phase 3 | Pending | (unchanged) |
+| PAY-06 | Phase 3 | Pending | (unchanged) |
+| PAY-07 | Phase 3 | Pending | (unchanged) |
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| PLAY-01 | Phase 5 | Pending |
-| PLAY-02 | Phase 5 | Pending |
-| PLAY-03 | Phase 5 | Pending |
-| PLAY-04 | Phase 5 | Pending |
-| PLAY-05 | Phase 5 | Pending |
-| PLAY-06 | Phase 5 | Pending |
-| PLAY-07 | Phase 5 | Pending |
-| PLAY-08 | Phase 5 | Pending |
+### Phase 4 — Webhook + Access Grant + Refund (sandbox) (12 requirements)
 
-### Phase 6 — Progress + Profile + Ship & Compliance Gates (21 requirements)
+> Все HOOK-* и DASH-* против ЮKassa sandbox webhook'ов. Pre-phase spike: ЮKassa webhook auth model.
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| LEGAL-04 | Phase 6 | Pending |
-| PROF-01 | Phase 6 | Pending |
-| PROF-02 | Phase 6 | Pending |
-| PROF-03 | Phase 6 | Pending |
-| PROF-04 | Phase 6 | Pending |
-| PROG-01 | Phase 6 | Pending |
-| PROG-02 | Phase 6 | Pending |
-| PROG-03 | Phase 6 | Pending |
-| PROG-04 | Phase 6 | Pending |
-| OPS-01 | Phase 6 | Pending |
-| OPS-02 | Phase 6 | Pending |
-| OPS-03 | Phase 6 | Pending |
-| OPS-04 | Phase 6 | Pending |
-| OPS-05 | Phase 6 | Pending |
-| OPS-06 | Phase 6 | Pending |
-| COMP-01 | Phase 6 | Pending |
-| COMP-02 | Phase 6 | Pending |
-| COMP-03 | Phase 6 | Pending |
-| COMP-04 | Phase 6 | Pending |
-| COMP-05 | Phase 6 | Pending |
-| COMP-06 | Phase 6 | Pending |
+| Requirement | Phase | Status | Changed |
+|-------------|-------|--------|---------|
+| HOOK-01 | Phase 4 | Pending | (unchanged) |
+| HOOK-02 | Phase 4 | Pending | (unchanged) |
+| HOOK-03 | Phase 4 | Pending | (unchanged) |
+| HOOK-04 | Phase 4 | Pending | (unchanged) |
+| HOOK-05 | Phase 4 | Pending | (unchanged) |
+| HOOK-06 | Phase 4 | Pending | (unchanged) |
+| HOOK-07 | Phase 4 | Pending | (unchanged) |
+| HOOK-08 | Phase 4 | Pending | (unchanged) |
+| DASH-01 | Phase 4 | Pending | (unchanged) |
+| DASH-02 | Phase 4 | Pending | (unchanged) |
+| DASH-03 | Phase 4 | Pending | (unchanged) |
+| DASH-04 | Phase 4 | Pending | (unchanged) |
+
+### Phase 5 — Video Player + Lesson Access Control (Kinescope test) (8 requirements)
+
+> Kinescope аккаунт в test-режиме (бесплатно, без KYC). Production domain whitelist в P7. Pre-phase spike: Kinescope JWT claim shape.
+
+| Requirement | Phase | Status | Changed |
+|-------------|-------|--------|---------|
+| PLAY-01 | Phase 5 | Pending | (unchanged) |
+| PLAY-02 | Phase 5 | Pending | (unchanged) |
+| PLAY-03 | Phase 5 | Pending | (unchanged) |
+| PLAY-04 | Phase 5 | Pending | (unchanged) |
+| PLAY-05 | Phase 5 | Pending | (unchanged) |
+| PLAY-06 | Phase 5 | Pending | (unchanged) |
+| PLAY-07 | Phase 5 | Pending | (unchanged) |
+| PLAY-08 | Phase 5 | Pending | (unchanged) |
+
+### Phase 6 — Progress + Profile + E2E + Feature Complete (dev) (13 requirements)
+
+> Progress, profile/soft-delete/hard-delete, CSP enforce, Playwright E2E на preview, CI green, rollback runbook draft. На выходе: feature-complete продукт на dev-стенде. OPS-04 (prod deploy) и OPS-06 (PITR test) отложены в P7.
+
+| Requirement | Phase | Status | Changed |
+|-------------|-------|--------|---------|
+| LEGAL-04 | Phase 6 | Pending | (unchanged) |
+| PROF-01 | Phase 6 | Pending | (unchanged) |
+| PROF-02 | Phase 6 | Pending | (unchanged) |
+| PROF-03 | Phase 6 | Pending | (unchanged) |
+| PROF-04 | Phase 6 | Pending | (unchanged) |
+| PROG-01 | Phase 6 | Pending | (unchanged) |
+| PROG-02 | Phase 6 | Pending | (unchanged) |
+| PROG-03 | Phase 6 | Pending | (unchanged) |
+| PROG-04 | Phase 6 | Pending | (unchanged) |
+| OPS-01 | Phase 6 | Pending | (unchanged — dev-DSN verify here; prod-DSN switch in P7) |
+| OPS-02 | Phase 6 | Pending | (unchanged) |
+| OPS-03 | Phase 6 | Pending | (unchanged) |
+| OPS-05 | Phase 6 | Pending | (unchanged — draft here; validated on prod in P7) |
+
+### Phase 7 — Production Launch Prep (16 requirements)
+
+> Финальная фаза (в основном чек-лист). Включает все prod-prep items, перенесённые из P1/P2/P3/P6: Supabase Pro+PITR, Vercel fra1, custom domain + DNS, custom SMTP + deliverability evidence, ЮKassa prod, RKN, юрист sign-off, prod deploy, security checklist, financial smoke test.
+
+| Requirement | Phase | Status | Changed |
+|-------------|-------|--------|---------|
+| FOUND-01 | Phase 7 | Pending | **Moved from Phase 1** (Pro tier + PITR is prod-only) |
+| FOUND-07 | Phase 7 | Pending | **Moved from Phase 1** (Vercel `fra1` region for prod deploy) |
+| FOUND-08 | Phase 7 | Pending | **Moved from Phase 1** (custom domain + DNS for prod) |
+| FOUND-09 | Phase 7 | Pending | **Moved from Phase 1** (152-ФЗ юрист sign-off — external lead-time) |
+| EMAIL-01 | Phase 7 | Pending | **Moved from Phase 2** (custom SMTP needs FOUND-08 DNS) |
+| EMAIL-02 | Phase 7 | Pending | **Moved from Phase 2** (templates need юрист-approved оператор реквизиты from FOUND-09) |
+| EMAIL-03 | Phase 7 | Pending | **Moved from Phase 2** (deliverability evidence needs finalised DKIM from FOUND-08) |
+| PAY-01 | Phase 7 | Pending | **Moved from Phase 3** (ЮKassa prod registration = ИП + оферта + 1-3 day approval) |
+| OPS-04 | Phase 7 | Pending | **Moved from Phase 6** (prod deploy is the cutover step) |
+| OPS-06 | Phase 7 | Pending | **Moved from Phase 6** (PITR test requires Pro tier from FOUND-01) |
+| COMP-01 | Phase 7 | Pending | (unchanged — was already in final phase) |
+| COMP-02 | Phase 7 | Pending | (unchanged — was already in final phase) |
+| COMP-03 | Phase 7 | Pending | (unchanged — was already in final phase) |
+| COMP-04 | Phase 7 | Pending | (unchanged — was already in final phase) |
+| COMP-05 | Phase 7 | Pending | (unchanged — was already in final phase) |
+| COMP-06 | Phase 7 | Pending | (unchanged — was already in final phase) |
 
 ---
 
@@ -335,15 +355,28 @@
 
 | Phase | Count | Categories |
 |-------|-------|-----------|
-| Phase 1 | 10 | FOUND |
-| Phase 2 | 21 | LEGAL (×3 of 4), LAND, AUTH, EMAIL |
-| Phase 3 | 12 | CRSE, PAY |
+| Phase 1 | 6 | FOUND (×6 of 10 — dev-only: 02, 03, 04, 05, 06, 10) |
+| Phase 2 | 18 | LEGAL (×3 of 4), LAND, AUTH |
+| Phase 3 | 11 | CRSE, PAY (×6 of 7 — sandbox: 02..07) |
 | Phase 4 | 12 | HOOK, DASH |
 | Phase 5 | 8 | PLAY |
-| Phase 6 | 21 | LEGAL (×1 of 4 — CSP enforce), PROF, PROG, OPS, COMP |
+| Phase 6 | 13 | LEGAL (×1 of 4 — CSP), PROF, PROG, OPS (×4 of 6 — dev-only: 01, 02, 03, 05) |
+| Phase 7 | 16 | FOUND (×4 of 10 — prod: 01, 07, 08, 09), EMAIL (full), PAY (×1 of 7 — prod registration), OPS (×2 of 6 — prod deploy + PITR test), COMP (full) |
 | **Total** | **84** | All 14 categories |
 
-**Note on LEGAL split:** LEGAL-01/02/03 ship in Phase 2 (privacy + oferta + security-headers required before first user registration so consent text can reference live policy). LEGAL-04 (CSP enforce) defers to Phase 6 because CSP can break Kinescope + SmartCaptcha and is safest as a final hardening pass once the frame-src/script-src inventory is stable.
+### Summary of phase reallocations (6 → 7 phases)
+
+**11 requirements moved** from earlier phases into the new Phase 7 (Production Launch Prep):
+
+- **From Phase 1 (4):** FOUND-01, FOUND-07, FOUND-08, FOUND-09
+- **From Phase 2 (3):** EMAIL-01, EMAIL-02, EMAIL-03
+- **From Phase 3 (1):** PAY-01
+- **From Phase 6 (2):** OPS-04, OPS-06
+- **Already in original Phase 6 → now in Phase 7 (6):** COMP-01..06
+
+**73 requirements unchanged** (still in their original phase number).
+
+**Note on LEGAL split (unchanged):** LEGAL-01/02/03 ship in Phase 2 (privacy + oferta drafts + security-headers required before first user registration so consent text can reference live policy URL; final юрист sign-off via COMP-02 in P7). LEGAL-04 (CSP enforce) defers to Phase 6 because CSP can break Kinescope + SmartCaptcha and is safest as a final hardening pass once the frame-src/script-src inventory is stable; production-CSP cutover proven in P7.
 
 ---
 
@@ -358,4 +391,4 @@
 
 ---
 *Requirements defined: 2026-05-24*
-*Last updated: 2026-05-24 after roadmapper traceability mapping*
+*Last updated: 2026-05-24 — traceability remapped after dev-first/prod-last restructure (6 → 7 phases)*

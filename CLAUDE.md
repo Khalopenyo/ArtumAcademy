@@ -97,7 +97,7 @@ supabase/migrations/         SQL-миграции (только append-only в �
 - Webhook handler → service_role: **разрешено** (нужно для записи под полным правом)
 - Lesson page → Kinescope URL: signed server-side, **никогда не кэшируется** в localStorage/React Query/Sentry breadcrumbs
 
-**Build order (M1, 6 фаз):** см. `.planning/ROADMAP.md`. P1 Foundations → P2 Auth+Marketing+Consent → P3 Catalog+Payment Redirect → P4 Webhook+Access Grant+Refund → P5 Video Player+Access Control → P6 Progress+Profile+Ship+Compliance.
+**Build order (M1, 7 фаз — dev-first / prod-last):** см. `.planning/ROADMAP.md`. P1 Dev Foundations → P2 Auth+Marketing+Consent (dev SMTP) → P3 Catalog+Payment Redirect (ЮKassa sandbox) → P4 Webhook+Access Grant+Refund (sandbox) → P5 Video Player+Access Control (Kinescope test) → P6 Progress+Profile+E2E+Feature Complete (dev) → P7 Production Launch Prep (Supabase Pro+PITR, custom domain+DNS, custom SMTP, ЮKassa prod, юрист sign-off, RKN, financial smoke test).
 
 **Полная архитектура:** `.planning/codebase/ARCHITECTURE.md` (текущая) + `.planning/research/ARCHITECTURE.md` (целевая M1, 1050 строк, включая RLS-политики, payment flow, video access flow).
 
@@ -127,7 +127,7 @@ supabase/migrations/         SQL-миграции (только append-only в �
 |----------|-----------|
 | `.planning/PROJECT.md` | Project identity, M1 scope, validated/active/out-of-scope, ключевые решения, ограничения |
 | `.planning/REQUIREMENTS.md` | 84 атомарных REQ-ID для M1 v1, замаплены на фазы (1–6), v2 deferred, out-of-scope |
-| `.planning/ROADMAP.md` | 6 фаз с целями, режимом (mvp), success criteria, REQ-маппингом, pre-phase research spikes |
+| `.planning/ROADMAP.md` | 7 фаз с целями, режимом (mvp), success criteria, REQ-маппингом, pre-phase research spikes (P4 ЮKassa webhook auth, P5 Kinescope JWT); P7 = Production Launch Prep (внешние треки запускать в P5) |
 | `.planning/STATE.md` | Текущая фаза, milestone, project reference. Обновляется при transitions |
 | `.planning/config.json` | YOLO mode, standard granularity, parallelization, Opus models, все workflow-агенты, MVP-mode |
 | `.planning/codebase/` | 7-документная карта существующей кодовой базы (STACK, INTEGRATIONS, ARCHITECTURE, STRUCTURE, CONVENTIONS, TESTING, CONCERNS) |
