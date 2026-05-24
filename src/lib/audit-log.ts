@@ -38,6 +38,7 @@ import 'server-only';
 
 import { headers } from 'next/headers';
 
+import { getClientIp } from '@/lib/headers/client-ip';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
 
@@ -75,11 +76,11 @@ export async function auditLog(input: AuditLogInput): Promise<void> {
   // audit-log.test.ts also need updating.
   // See https://nextjs.org/docs/app/api-reference/functions/headers for the 15+ async signature.
   try {
+    // IP extraction lives in src/lib/headers/client-ip.ts (plan-06 — shared
+    // with rate-limit + plan-07 consent capture). The user-agent read still
+    // calls headers() directly here because UA capture is audit-log-specific.
+    const ipAddress = getClientIp();
     const hs = headers();
-    const ipAddress =
-      hs.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-      hs.get('x-real-ip') ??
-      null;
     const userAgent = hs.get('user-agent') ?? null;
 
     const supabase = createAdminClient();

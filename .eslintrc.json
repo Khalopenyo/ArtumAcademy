@@ -26,6 +26,8 @@
       "files": [
         "src/lib/supabase/admin.ts",
         "src/lib/audit-log.ts",
+        "src/lib/rate-limit/**/*.{ts,tsx}",
+        "src/lib/captcha/**/*.{ts,tsx}",
         "src/server/**/*.{ts,tsx}",
         "src/app/api/**/*.{ts,tsx}",
         "src/instrumentation.ts",

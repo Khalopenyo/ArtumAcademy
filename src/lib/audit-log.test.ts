@@ -1,6 +1,6 @@
 // @vitest-environment node
 /**
- * Unit tests for src/lib/audit-log.ts (FOUND-05, plan-04).
+ * Unit tests for src/lib/audit-log.ts (FOUND-05, plan-04 + plan-06 refactor).
  *
  * Mocking strategy:
  *   - `server-only` is mocked to a no-op (it throws at import time outside
@@ -13,6 +13,12 @@
  *     `X-Forwarded-For` vs `x-forwarded-for` casing — a real bug observed
  *     behind load balancers that uppercase the header. Case 2 below
  *     explicitly proves case-insensitivity.
+ *   - `@/lib/headers/client-ip.getClientIp` is mocked independently (plan-06
+ *     extracted the IP parser into a shared helper). The default mock reads
+ *     the current `next/headers()` mock and applies the same lookup order
+ *     as the real implementation, so tests that override `next/headers()`
+ *     for a specific case still drive the IP capture correctly. Cases that
+ *     want to test IP-specific edge cases override `getClientIp` directly.
  *   - `@/lib/supabase/admin.createAdminClient` is mocked to return a fake
  *     chain `from() → insert()` where `insert` is a vi.fn we assert on.
  *   - `@/lib/logger` is mocked to no-op so logger.error doesn't pollute
@@ -33,6 +39,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { headers } from 'next/headers';
 
+import { getClientIp } from '@/lib/headers/client-ip';
 import { auditLog, auditLogContextless } from './audit-log';
 
 vi.mock('server-only', () => ({}));
@@ -65,6 +72,15 @@ vi.mock('@/lib/supabase/admin', () => ({
   }),
 }));
 
+// Mock the shared IP helper independently. Default behaviour mirrors the
+// real implementation against the current `next/headers()` mock so that
+// existing test cases (which override headers()) still drive the right
+// IP capture. Tests that want to assert IP-specific edge cases override
+// this mock directly via vi.mocked(getClientIp).mockReturnValueOnce(...).
+vi.mock('@/lib/headers/client-ip', () => ({
+  getClientIp: vi.fn(),
+}));
+
 // Stub logger so logger.error doesn't pollute test output AND so we can
 // assert that failure paths actually log.
 vi.mock('@/lib/logger', () => ({
@@ -73,19 +89,26 @@ vi.mock('@/lib/logger', () => ({
 }));
 
 const mockedHeaders = vi.mocked(headers);
+const mockedGetClientIp = vi.mocked(getClientIp);
 
 beforeEach(() => {
   insertMock.mockClear();
   insertMock.mockResolvedValue({ error: null });
   loggerErrorMock.mockClear();
   mockedHeaders.mockReset();
-  // Restore the default mock (most tests want this — Cases 2/4/5/7 override).
+  mockedGetClientIp.mockReset();
+  // Restore the default headers mock (used to drive the user-agent capture
+  // — IP capture flows through the separately-mocked getClientIp helper).
   mockedHeaders.mockReturnValue(
     new Headers({
       'x-forwarded-for': '203.0.113.42, 10.0.0.1',
       'user-agent': 'Test Agent 1.0',
     }) as ReturnType<typeof headers>,
   );
+  // Default IP helper resolution: matches the default headers mock above.
+  // Tests that override headers() for IP-specific behaviour also override
+  // getClientIp() (Cases 2, 4, 5 below).
+  mockedGetClientIp.mockReturnValue('203.0.113.42');
 });
 
 afterEach(() => {
@@ -112,6 +135,9 @@ describe('auditLog', () => {
         'User-Agent': 'Uppercase UA',
       }) as ReturnType<typeof headers>,
     );
+    // getClientIp() is mocked separately (plan-06) — drive it to mirror the
+    // headers() mock for this case.
+    mockedGetClientIp.mockReturnValueOnce('198.51.100.99');
     await auditLog({ userId: 'user-2', action: 'test.case.event' });
     expect(insertMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -137,6 +163,7 @@ describe('auditLog', () => {
         'user-agent': 'NoXFF UA',
       }) as ReturnType<typeof headers>,
     );
+    mockedGetClientIp.mockReturnValueOnce('192.0.2.55');
     await auditLog({ userId: 'user-4', action: 'test.fallback' });
     expect(insertMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -148,6 +175,7 @@ describe('auditLog', () => {
 
   it('5. inserts ip_address: null when no IP headers are present', async () => {
     mockedHeaders.mockReturnValueOnce(new Headers({}) as ReturnType<typeof headers>);
+    mockedGetClientIp.mockReturnValueOnce(null);
     await auditLog({ userId: 'user-5', action: 'test.no.ip' });
     expect(insertMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -171,7 +199,13 @@ describe('auditLog', () => {
   });
 
   it('7. does NOT throw when headers() itself throws (non-request context)', async () => {
+    // In a non-request context, BOTH headers() and getClientIp() would
+    // throw — getClientIp() calls headers() internally. Mock both to
+    // throw so that whichever runs first surfaces the failure.
     mockedHeaders.mockImplementationOnce(() => {
+      throw new Error('headers() called outside a request');
+    });
+    mockedGetClientIp.mockImplementationOnce(() => {
       throw new Error('headers() called outside a request');
     });
     await expect(
@@ -181,7 +215,7 @@ describe('auditLog', () => {
       expect.objectContaining({ err: expect.any(Error) }),
       'auditLog helper crashed',
     );
-    // insert never reached because headers() threw before createAdminClient().
+    // insert never reached because the IP/headers read threw before createAdminClient().
     expect(insertMock).not.toHaveBeenCalled();
   });
 
@@ -218,8 +252,9 @@ describe('auditLogContextless', () => {
         user_id: 'user-9',
       }),
     );
-    // Crucially, headers() must NOT have been touched.
+    // Crucially, neither headers() nor getClientIp() must have been touched.
     expect(mockedHeaders).not.toHaveBeenCalled();
+    expect(mockedGetClientIp).not.toHaveBeenCalled();
   });
 
   it('does NOT throw on insert failure (mirrors auditLog no-throw contract)', async () => {
