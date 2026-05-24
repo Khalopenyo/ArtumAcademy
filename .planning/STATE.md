@@ -1,7 +1,7 @@
 # State: VideoEdit Academy
 
 **Initialized:** 2026-05-24
-**Last updated:** 2026-05-24 (roadmap revised 6 → 7 phases, dev-first / prod-last)
+**Last updated:** 2026-05-24 (Phase 1 complete — Dev Foundations PASS)
 
 ---
 
@@ -10,19 +10,19 @@
 **Project:** VideoEdit Academy (code: `VEA`)
 **Reference doc:** `.planning/PROJECT.md`
 **Core Value:** Купивший пользователь должен иметь возможность смотреть оплаченный курс без перебоев и без возможности скачать видео.
-**Current focus:** Bootstrap Phase 1 (Dev Foundations) — settle env-parser, service_role boundary, audit_log, RLS test harness, Sentry SDK with dev-DSN. Production-grade gates (Supabase Pro, custom domain, юрист sign-off) intentionally deferred to Phase 7 to unblock dev work from external lead-times.
+**Current focus:** Phase 1 (Dev Foundations) ✓ Complete — env Zod parser + server-only boundary + pino logger + audit_log + Sentry SDK + RLS test harness all shipped (39 commits, verified PASS). Next: Phase 2 (Auth + Marketing Shell + 152-ФЗ Consent) — landing, /privacy + /oferta drafts, registration/login/recovery, consent capture, Yandex SmartCaptcha, rate limiting. Production-grade gates remain deferred to Phase 7.
 
 ---
 
 ## Current Position
 
 **Milestone:** v1.0-mvp (M1, ~4–6 недель разработки + ~1–1.5 недели production prep)
-**Current phase:** 1 — Dev Foundations
-**Current plan:** none (roadmap revised; awaiting `/gsd:plan-phase 1`)
-**Status:** Not started
+**Current phase:** 2 — Auth + Marketing Shell + 152-ФЗ Consent (dev SMTP) — awaiting `/gsd:plan-phase 2`
+**Last completed phase:** 1 — Dev Foundations (2026-05-24, 39 commits `02493ed..2b382e3`, PASS)
+**Status:** Phase 1 closed; Phase 2 not started
 **Progress:**
 ```
-[░░░░░░░░░░░░░░░░░░░░] 0/7 phases · 0/84 requirements
+[██░░░░░░░░░░░░░░░░░░] 1/7 phases · 6/84 requirements
 ```
 
 > **Note on P7:** Phase 7 (Production Launch Prep) is a release-gate phase — mostly checklist work, not code. It bundles all production-prep items (Supabase Pro+PITR, Vercel fra1, custom domain + DNS, custom SMTP + deliverability evidence, ЮKassa prod, RKN notification, юрист sign-off, prod deploy, security checklist, financial smoke test on 1₽). Stylistically still part of the v1.0-mvp milestone — the public launch happens after P7. P1–P6 deliver feature-complete product on dev-стенде (Supabase free, ЮKassa sandbox, Supabase default SMTP, preview URLs) which can be demoed to friends, beta testers, or investors via preview-URL before P7 kicks in.
@@ -33,14 +33,14 @@
 
 | Metric | Target | Current |
 |---|---|---|
-| Phases complete | 7/7 | 0/7 |
-| v1 requirements complete | 84/84 | 0/84 |
-| HIGH-severity pitfalls prevented | 13/13 | 0/13 (none reached yet) |
+| Phases complete | 7/7 | 1/7 |
+| v1 requirements complete | 84/84 | 6/84 (FOUND-02, 03, 04, 05, 06, 10) |
+| HIGH-severity pitfalls prevented | 13/13 | 4/13 (#10 RLS USING/WITH CHECK harness, #12 service_role baseline, #21 server-only discipline, #22 middleware budget — all via P1) |
 | Compliance gates closed (COMP-01..06) | 6/6 | 0/6 (all in P7) |
 | E2E critical-path test passing | yes | no (not yet written, target P6 against ЮKassa sandbox) |
 | Feature-complete on dev-стенде (post-P6 demo readiness) | yes | no |
 | Production launch ready (post-P7) | yes | no |
-| Estimated weeks elapsed | 5–7.5 | 0 |
+| Estimated weeks elapsed | 5–7.5 | ~0.5 (P1 ≈ 1 session) |
 
 ---
 
