@@ -109,7 +109,8 @@ describe('logger', () => {
     const { instance, chunks } = await makeBufferedLogger();
     instance.info({ foo: 'bar' }, 'hello world');
     expect(chunks).toHaveLength(1);
-    const parsed = JSON.parse(chunks[0]);
+    const line = chunks[0]!;
+    const parsed = JSON.parse(line);
     expect(parsed.msg).toBe('hello world');
     expect(parsed.foo).toBe('bar');
     expect(parsed.service).toBe('videoedit-academy');
@@ -122,10 +123,11 @@ describe('logger', () => {
     const { instance, chunks } = await makeBufferedLogger();
     instance.info({ password: 'secret123' }, 'creds');
     expect(chunks).toHaveLength(1);
-    const parsed = JSON.parse(chunks[0]);
+    const line = chunks[0]!;
+    const parsed = JSON.parse(line);
     expect(parsed.password).toBe('[REDACTED]');
     // Defense-in-depth: raw secret value must not appear anywhere in the line.
-    expect(chunks[0]).not.toContain('secret123');
+    expect(line).not.toContain('secret123');
   });
 
   it('returns the same instance on repeated getLogger() calls (singleton)', async () => {
