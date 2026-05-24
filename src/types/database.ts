@@ -14,6 +14,14 @@
  * schema; the regenerated types will supersede the hand-written placeholder
  * (column names + nullability already match the migration source-of-truth,
  * so the regen should be a no-op diff).
+ *
+ * Plan-06 (AUTH-03, AUTH-10) UPDATE: same Docker-absent fallback applies.
+ * Hand-patched `user_consents` and `rate_limit_log` table types to match
+ * supabase/migrations/20260525000001_add_user_consents.sql and
+ * supabase/migrations/20260525000002_add_rate_limit_log.sql verbatim.
+ * Also added the `consent_purpose` enum to Database.public.Enums.
+ * TODO: regenerate via `npm run db:types` when Docker is available — the
+ * regen should be a no-op diff against the schema captured here.
  */
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
@@ -57,9 +65,71 @@ export interface Database {
         };
         Relationships: [];
       };
+      user_consents: {
+        Row: {
+          id: string;
+          user_id: string;
+          purpose: Database['public']['Enums']['consent_purpose'];
+          policy_version: string;
+          ip: string | null;
+          user_agent: string | null;
+          accepted_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          purpose: Database['public']['Enums']['consent_purpose'];
+          policy_version: string;
+          ip?: string | null;
+          user_agent?: string | null;
+          accepted_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          purpose?: Database['public']['Enums']['consent_purpose'];
+          policy_version?: string;
+          ip?: string | null;
+          user_agent?: string | null;
+          accepted_at?: string;
+        };
+        Relationships: [];
+      };
+      rate_limit_log: {
+        Row: {
+          id: number;
+          key: string;
+          action: string;
+          attempted_at: string;
+        };
+        Insert: {
+          id?: number;
+          key: string;
+          action: string;
+          attempted_at?: string;
+        };
+        Update: {
+          id?: number;
+          key?: string;
+          action?: string;
+          attempted_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
-    Enums: Record<string, never>;
+    Functions: {
+      rate_limit_log_cleanup: {
+        Args: Record<string, never>;
+        Returns: undefined;
+      };
+      user_consents_no_update: {
+        Args: Record<string, never>;
+        Returns: unknown;
+      };
+    };
+    Enums: {
+      consent_purpose: 'pdn_processing' | 'oferta';
+    };
   };
 }
