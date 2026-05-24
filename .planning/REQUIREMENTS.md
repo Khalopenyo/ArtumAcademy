@@ -209,29 +209,141 @@
 
 ## Traceability
 
-> Заполняется `gsd-roadmapper`. Каждое v1 требование должно быть замаппено ровно на одну фазу.
+> Заполнено `gsd-roadmapper` 2026-05-24. Каждое v1 требование замаплено ровно на одну фазу из `.planning/ROADMAP.md`.
+
+### Phase 1 — Foundations & Compliance Setup (10 requirements)
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FOUND-01..10 | — | Pending |
-| LEGAL-01..04 | — | Pending |
-| LAND-01..05 | — | Pending |
-| AUTH-01..10 | — | Pending |
-| CRSE-01..05 | — | Pending |
-| PAY-01..07 | — | Pending |
-| HOOK-01..08 | — | Pending |
-| PLAY-01..08 | — | Pending |
-| DASH-01..04 | — | Pending |
-| PROF-01..04 | — | Pending |
-| PROG-01..04 | — | Pending |
-| EMAIL-01..03 | — | Pending |
-| OPS-01..06 | — | Pending |
-| COMP-01..06 | — | Pending |
+| FOUND-01 | Phase 1 | Pending |
+| FOUND-02 | Phase 1 | Pending |
+| FOUND-03 | Phase 1 | Pending |
+| FOUND-04 | Phase 1 | Pending |
+| FOUND-05 | Phase 1 | Pending |
+| FOUND-06 | Phase 1 | Pending |
+| FOUND-07 | Phase 1 | Pending |
+| FOUND-08 | Phase 1 | Pending |
+| FOUND-09 | Phase 1 | Pending |
+| FOUND-10 | Phase 1 | Pending |
+
+### Phase 2 — Auth + Marketing Shell + 152-ФЗ Consent (21 requirements)
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| LEGAL-01 | Phase 2 | Pending |
+| LEGAL-02 | Phase 2 | Pending |
+| LEGAL-03 | Phase 2 | Pending |
+| LAND-01 | Phase 2 | Pending |
+| LAND-02 | Phase 2 | Pending |
+| LAND-03 | Phase 2 | Pending |
+| LAND-04 | Phase 2 | Pending |
+| LAND-05 | Phase 2 | Pending |
+| AUTH-01 | Phase 2 | Pending |
+| AUTH-02 | Phase 2 | Pending |
+| AUTH-03 | Phase 2 | Pending |
+| AUTH-04 | Phase 2 | Pending |
+| AUTH-05 | Phase 2 | Pending |
+| AUTH-06 | Phase 2 | Pending |
+| AUTH-07 | Phase 2 | Pending |
+| AUTH-08 | Phase 2 | Pending |
+| AUTH-09 | Phase 2 | Pending |
+| AUTH-10 | Phase 2 | Pending |
+| EMAIL-01 | Phase 2 | Pending |
+| EMAIL-02 | Phase 2 | Pending |
+| EMAIL-03 | Phase 2 | Pending |
+
+### Phase 3 — Catalog + Payment Redirect (12 requirements)
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| CRSE-01 | Phase 3 | Pending |
+| CRSE-02 | Phase 3 | Pending |
+| CRSE-03 | Phase 3 | Pending |
+| CRSE-04 | Phase 3 | Pending |
+| CRSE-05 | Phase 3 | Pending |
+| PAY-01 | Phase 3 | Pending |
+| PAY-02 | Phase 3 | Pending |
+| PAY-03 | Phase 3 | Pending |
+| PAY-04 | Phase 3 | Pending |
+| PAY-05 | Phase 3 | Pending |
+| PAY-06 | Phase 3 | Pending |
+| PAY-07 | Phase 3 | Pending |
+
+### Phase 4 — Webhook + Access Grant + Refund (12 requirements)
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| HOOK-01 | Phase 4 | Pending |
+| HOOK-02 | Phase 4 | Pending |
+| HOOK-03 | Phase 4 | Pending |
+| HOOK-04 | Phase 4 | Pending |
+| HOOK-05 | Phase 4 | Pending |
+| HOOK-06 | Phase 4 | Pending |
+| HOOK-07 | Phase 4 | Pending |
+| HOOK-08 | Phase 4 | Pending |
+| DASH-01 | Phase 4 | Pending |
+| DASH-02 | Phase 4 | Pending |
+| DASH-03 | Phase 4 | Pending |
+| DASH-04 | Phase 4 | Pending |
+
+### Phase 5 — Video Player + Lesson Access Control (8 requirements)
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| PLAY-01 | Phase 5 | Pending |
+| PLAY-02 | Phase 5 | Pending |
+| PLAY-03 | Phase 5 | Pending |
+| PLAY-04 | Phase 5 | Pending |
+| PLAY-05 | Phase 5 | Pending |
+| PLAY-06 | Phase 5 | Pending |
+| PLAY-07 | Phase 5 | Pending |
+| PLAY-08 | Phase 5 | Pending |
+
+### Phase 6 — Progress + Profile + Ship & Compliance Gates (21 requirements)
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| LEGAL-04 | Phase 6 | Pending |
+| PROF-01 | Phase 6 | Pending |
+| PROF-02 | Phase 6 | Pending |
+| PROF-03 | Phase 6 | Pending |
+| PROF-04 | Phase 6 | Pending |
+| PROG-01 | Phase 6 | Pending |
+| PROG-02 | Phase 6 | Pending |
+| PROG-03 | Phase 6 | Pending |
+| PROG-04 | Phase 6 | Pending |
+| OPS-01 | Phase 6 | Pending |
+| OPS-02 | Phase 6 | Pending |
+| OPS-03 | Phase 6 | Pending |
+| OPS-04 | Phase 6 | Pending |
+| OPS-05 | Phase 6 | Pending |
+| OPS-06 | Phase 6 | Pending |
+| COMP-01 | Phase 6 | Pending |
+| COMP-02 | Phase 6 | Pending |
+| COMP-03 | Phase 6 | Pending |
+| COMP-04 | Phase 6 | Pending |
+| COMP-05 | Phase 6 | Pending |
+| COMP-06 | Phase 6 | Pending |
+
+---
 
 **Coverage (M1 v1):**
-- v1 requirements: ~74 total
-- Mapped to phases: 0 (pending roadmapper)
-- Unmapped: 74 ⚠️ (roadmapper to resolve)
+- v1 requirements: 84 total
+- Mapped to phases: 84 (100% ✓)
+- Unmapped: 0
+- Duplicates: 0
+
+| Phase | Count | Categories |
+|-------|-------|-----------|
+| Phase 1 | 10 | FOUND |
+| Phase 2 | 21 | LEGAL (×3 of 4), LAND, AUTH, EMAIL |
+| Phase 3 | 12 | CRSE, PAY |
+| Phase 4 | 12 | HOOK, DASH |
+| Phase 5 | 8 | PLAY |
+| Phase 6 | 21 | LEGAL (×1 of 4 — CSP enforce), PROF, PROG, OPS, COMP |
+| **Total** | **84** | All 14 categories |
+
+**Note on LEGAL split:** LEGAL-01/02/03 ship in Phase 2 (privacy + oferta + security-headers required before first user registration so consent text can reference live policy). LEGAL-04 (CSP enforce) defers to Phase 6 because CSP can break Kinescope + SmartCaptcha and is safest as a final hardening pass once the frame-src/script-src inventory is stable.
 
 ---
 
@@ -246,4 +358,4 @@
 
 ---
 *Requirements defined: 2026-05-24*
-*Last updated: 2026-05-24 after initial definition*
+*Last updated: 2026-05-24 after roadmapper traceability mapping*
