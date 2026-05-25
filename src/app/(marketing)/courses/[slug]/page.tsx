@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { Check, ChevronLeft, Lock, Play, Users } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { CourseCard } from '@/components/artum/CourseCard';
 import { WishlistButton } from '@/components/artum/WishlistButton';
 import {
   formatDuration,
@@ -24,6 +25,7 @@ import {
   isLessonComplete,
   useArtumStore,
 } from '@/lib/store';
+import type { Course } from '@/lib/mock/courses';
 import { useCurrentUser, useHydrated } from '@/lib/store/hooks';
 import { cn } from '@/lib/utils';
 
@@ -72,6 +74,11 @@ export default function CoursePage() {
         (c) => c.userId === user.id && c.courseSlug === course.slug,
       )
     : false;
+
+  // Похожие курсы — другие из той же категории, до 3 штук
+  const similar: Course[] = allCourses
+    .filter((c) => c.slug !== course.slug && c.category === course.category)
+    .slice(0, 3);
 
   // Find next not-completed lesson (для CTA «Продолжить»)
   function findNextLesson() {
@@ -269,6 +276,36 @@ export default function CoursePage() {
               ))}
             </div>
           </section>
+
+          {/* Похожие курсы */}
+          {similar.length > 0 ? (
+            <section className="space-y-4">
+              <div className="flex items-end justify-between">
+                <h2 className="text-xl font-semibold sm:text-2xl">Похожие курсы</h2>
+                <span className="text-sm text-muted-foreground">
+                  По категории «{category.label}»
+                </span>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {similar.map((s) => {
+                  const sPurchased = user
+                    ? isCoursePurchased(state, user.id, s.slug)
+                    : false;
+                  const sProgress = user
+                    ? getCourseProgressFromStore(state, user.id, s)
+                    : null;
+                  return (
+                    <CourseCard
+                      key={s.id}
+                      course={s}
+                      purchased={sPurchased}
+                      progressPercent={sProgress?.percent ?? 0}
+                    />
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
         </div>
 
         {/* Правая колонка — sticky CTA card */}
