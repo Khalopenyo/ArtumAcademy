@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState, useTransition } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { UserPlus } from 'lucide-react';
 
@@ -9,19 +10,45 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useArtumStore } from '@/lib/store';
 
-/**
- * Страница регистрации (ТЗ §4.6).
- * Скелет: форма без submit-логики. Согласие на ПДн — placeholder до выбора рынка.
- * Реальный auth + 152-ФЗ consent capture — этап 2 ТЗ §9.
- */
 export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterInner />
+    </Suspense>
+  );
+}
+
+function RegisterInner() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const registerUser = useArtumStore((s) => s.registerUser);
+  const [pending, startTransition] = useTransition();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [agreed, setAgreed] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
+  const next = searchParams.get('next') ?? '/';
   const canSubmit = name.length > 0 && email.length > 0 && password.length >= 8 && agreed;
+
+  function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (!canSubmit) return;
+    startTransition(() => {
+      const res = registerUser({ name, email, password });
+      if (!res.ok) {
+        setError(res.error);
+        return;
+      }
+      toast.success(`Аккаунт создан. Добро пожаловать, ${res.user.name}!`);
+      router.push(next);
+      router.refresh();
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -35,15 +62,7 @@ export default function RegisterPage() {
         </p>
       </div>
 
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          toast.info('Регистрация появится на этапе 2 ТЗ §9', {
-            description: 'Сейчас вы видите скелет (этап 1 ТЗ §9 — вёрстка)',
-          });
-        }}
-        className="space-y-4"
-      >
+      <form onSubmit={onSubmit} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="name">Имя</Label>
           <Input
@@ -51,8 +70,10 @@ export default function RegisterPage() {
             type="text"
             placeholder="Как к вам обращаться?"
             autoComplete="given-name"
+            required
             value={name}
             onChange={(e) => setName(e.target.value)}
+            disabled={pending}
           />
         </div>
         <div className="space-y-2">
@@ -62,8 +83,10 @@ export default function RegisterPage() {
             type="email"
             placeholder="you@artum.academy"
             autoComplete="email"
+            required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            disabled={pending}
           />
         </div>
         <div className="space-y-2">
@@ -73,12 +96,13 @@ export default function RegisterPage() {
             type="password"
             placeholder="Минимум 8 символов"
             autoComplete="new-password"
+            required
+            minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            disabled={pending}
           />
-          <p className="text-xs text-muted-foreground">
-            Минимум 8 символов, хотя бы одна цифра
-          </p>
+          <p className="text-xs text-muted-foreground">Минимум 8 символов</p>
         </div>
 
         <div className="flex items-start gap-3 rounded-lg border border-border bg-card/50 p-3">
@@ -87,6 +111,7 @@ export default function RegisterPage() {
             checked={agreed}
             onCheckedChange={(v) => setAgreed(v === true)}
             className="mt-0.5"
+            disabled={pending}
           />
           <Label htmlFor="agree" className="text-sm font-normal leading-relaxed">
             Я согласен с{' '}
@@ -97,12 +122,18 @@ export default function RegisterPage() {
             <span className="text-primary underline-offset-2 hover:underline">
               политикой конфиденциальности
             </span>
-            {' '}(тексты появятся на этапе 2 после выбора рынка)
+            {' '}(тексты будут добавлены позже)
           </Label>
         </div>
 
-        <Button type="submit" size="lg" className="w-full" disabled={!canSubmit}>
-          Создать аккаунт
+        {error ? (
+          <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {error}
+          </p>
+        ) : null}
+
+        <Button type="submit" size="lg" className="w-full" disabled={!canSubmit || pending}>
+          {pending ? 'Создаём аккаунт…' : 'Создать аккаунт'}
         </Button>
       </form>
 
@@ -121,18 +152,20 @@ export default function RegisterPage() {
         size="lg"
         className="w-full"
         onClick={() =>
-          toast.info('Google OAuth подключим на этапе 2 ТЗ §9', {
-            description: 'Сейчас вы видите скелет (этап 1 ТЗ §9 — вёрстка)',
+          toast.info('Google OAuth подключим на этапе с реальной БД', {
+            description: 'Сейчас используется mock-аутентификация в localStorage',
           })
         }
       >
-        <GoogleIcon className="mr-2 size-5" aria-hidden />
-        Зарегистрироваться через Google
+        <GoogleIcon className="mr-2 size-5" aria-hidden /> Зарегистрироваться через Google
       </Button>
 
       <p className="text-center text-sm text-muted-foreground">
         Уже есть аккаунт?{' '}
-        <Link href="/login" className="text-primary hover:underline">
+        <Link
+          href={next === '/' ? '/login' : `/login?next=${encodeURIComponent(next)}`}
+          className="text-primary hover:underline"
+        >
           Войти
         </Link>
       </p>

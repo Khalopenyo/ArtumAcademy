@@ -1,21 +1,54 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState, useTransition } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { LogIn } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useArtumStore } from '@/lib/store';
 
 /**
- * Страница входа (ТЗ §4.6).
- * Скелет: статичная форма без submit-логики. Реальный auth — этап 2 ТЗ §9.
+ * Страница входа (ТЗ §4.6) — реальный submit против mock store.
+ * Поддерживает `?next=<path>` для редиректа на ту страницу, откуда юзер
+ * был отброшен auth gate'ом.
  */
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginInner />
+    </Suspense>
+  );
+}
+
+function LoginInner() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const loginUser = useArtumStore((s) => s.loginUser);
+  const [pending, startTransition] = useTransition();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  const next = searchParams.get('next') ?? '/';
+
+  function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    startTransition(() => {
+      const res = loginUser({ email, password });
+      if (!res.ok) {
+        setError(res.error);
+        return;
+      }
+      toast.success(`Добро пожаловать, ${res.user.name}!`);
+      router.push(next);
+      router.refresh();
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -27,17 +60,12 @@ export default function LoginPage() {
         <p className="mt-1 text-sm text-muted-foreground">
           Введите email и пароль, чтобы продолжить обучение
         </p>
+        <p className="mt-2 text-xs text-muted-foreground/80">
+          Демо-аккаунт: <code className="font-mono">ivan.petrov@example.com</code> / <code className="font-mono">demo1234</code>
+        </p>
       </div>
 
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          toast.info('Авторизация появится на этапе 2 ТЗ §9', {
-            description: 'Сейчас вы видите скелет (этап 1 ТЗ §9 — вёрстка)',
-          });
-        }}
-        className="space-y-4"
-      >
+      <form onSubmit={onSubmit} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input
@@ -45,8 +73,10 @@ export default function LoginPage() {
             type="email"
             placeholder="you@artum.academy"
             autoComplete="email"
+            required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            disabled={pending}
           />
         </div>
         <div className="space-y-2">
@@ -64,13 +94,22 @@ export default function LoginPage() {
             type="password"
             placeholder="Минимум 8 символов"
             autoComplete="current-password"
+            required
+            minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            disabled={pending}
           />
         </div>
 
-        <Button type="submit" size="lg" className="w-full">
-          Войти
+        {error ? (
+          <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {error}
+          </p>
+        ) : null}
+
+        <Button type="submit" size="lg" className="w-full" disabled={pending}>
+          {pending ? 'Входим…' : 'Войти'}
         </Button>
       </form>
 
@@ -89,8 +128,8 @@ export default function LoginPage() {
         size="lg"
         className="w-full"
         onClick={() =>
-          toast.info('Google OAuth подключим на этапе 2 ТЗ §9', {
-            description: 'Сейчас вы видите скелет (этап 1 ТЗ §9 — вёрстка)',
+          toast.info('Google OAuth подключим на этапе с реальной БД', {
+            description: 'Сейчас используется mock-аутентификация в localStorage',
           })
         }
       >
@@ -99,7 +138,10 @@ export default function LoginPage() {
 
       <p className="text-center text-sm text-muted-foreground">
         Нет аккаунта?{' '}
-        <Link href="/register" className="text-primary hover:underline">
+        <Link
+          href={next === '/' ? '/register' : `/register?next=${encodeURIComponent(next)}`}
+          className="text-primary hover:underline"
+        >
           Зарегистрироваться
         </Link>
       </p>
