@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
-import { BookOpen, ShieldCheck, Users } from 'lucide-react';
+import { BookOpen, Percent, ShieldCheck, Users } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { RevenueChart } from '@/components/artum/RevenueChart';
@@ -73,18 +73,24 @@ export default function AdminHomePage() {
       </section>
 
       {/* Quick links */}
-      <section className="grid gap-4 sm:grid-cols-2">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <QuickLink
           href="/admin/courses"
           icon={<BookOpen className="size-6" aria-hidden />}
           title="Курсы"
-          description="CRUD курсов: создание, редактирование, удаление, управление модулями и уроками."
+          description="CRUD курсов, модулей и уроков. Drag-drop сортировка."
         />
         <QuickLink
           href="/admin/users"
           icon={<Users className="size-6" aria-hidden />}
           title="Пользователи"
-          description="Список зарегистрированных пользователей, их покупки и прогресс."
+          description="Список зарегистрированных + поиск + прогресс."
+        />
+        <QuickLink
+          href="/admin/promocodes"
+          icon={<Percent className="size-6" aria-hidden />}
+          title="Промокоды"
+          description="Скидки в процентах или рублях, лимиты использований, срок действия."
         />
       </section>
 

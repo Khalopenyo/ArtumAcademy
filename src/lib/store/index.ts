@@ -60,6 +60,24 @@ export interface StoredCertificate {
 export type LessonProgressKey = `${string}:${string}`; // `${userId}:${lessonId}`
 export type PurchaseKey = `${string}:${string}`; // `${userId}:${courseSlug}`
 
+/** Промокод (скидка при покупке) — ТЗ §1.5 явно «без сложных промокодов»,
+ *  но базовый mock с фикс/процент-скидкой для админки и demo-валидации */
+export interface Promocode {
+  id: string;
+  /** Уникальный код в верхнем регистре (для удобства ввода) */
+  code: string;
+  type: 'percent' | 'fixed';
+  /** Для percent: 0-100. Для fixed: сумма в копейках */
+  value: number;
+  /** ISO срок действия; null = бессрочный */
+  validUntil: string | null;
+  /** Кол-во оставшихся использований; null = безлимит */
+  usesLeft: number | null;
+  /** Заметка для админа (внутреннее имя) */
+  note: string;
+  createdAt: string;
+}
+
 /** Подписка пользователя на «все курсы» — ТЗ §5.3 */
 export interface Subscription {
   userId: string;
@@ -114,6 +132,7 @@ interface ArtumState {
   subscriptions: Subscription[];
   /** {userId:courseSlug → true} избранное / wishlist */
   wishlist: Record<string, true>;
+  promocodes: Promocode[];
 
   // ─── ACTIONS ──────────────────────────────────────────────────────
   // Auth
@@ -149,7 +168,19 @@ interface ArtumState {
   // Progress / Purchase / Cert
   markLessonComplete: (lessonId: string) => void;
   unmarkLesson: (lessonId: string) => void;
-  buyCourse: (courseSlug: string) => { ok: true } | { ok: false; error: string };
+  buyCourse: (
+    courseSlug: string,
+    options?: { promocode?: string },
+  ) => { ok: true; discountMinor: number } | { ok: false; error: string };
+  validatePromocode: (
+    code: string,
+    courseSlug: string,
+  ) => { ok: true; promocode: Promocode; discountMinor: number } | { ok: false; error: string };
+  addPromocode: (input: Omit<Promocode, 'id' | 'createdAt'>) =>
+    | { ok: true }
+    | { ok: false; error: string };
+  updatePromocode: (id: string, patch: Partial<Omit<Promocode, 'id'>>) => void;
+  deletePromocode: (id: string) => void;
   /** Оформление подписки на все курсы */
   buySubscription: (period: 'monthly' | 'yearly') =>
     | { ok: true }
@@ -197,7 +228,31 @@ const initialState = (): Omit<ArtumState, keyof Actions> => ({
   certificates: [],
   subscriptions: [],
   wishlist: {},
+  promocodes: SEED_PROMOCODES,
 });
+
+const SEED_PROMOCODES: Promocode[] = [
+  {
+    id: 'promo-seed-welcome',
+    code: 'WELCOME10',
+    type: 'percent',
+    value: 10,
+    validUntil: null,
+    usesLeft: null,
+    note: 'Скидка 10% на первый курс',
+    createdAt: '2026-01-01',
+  },
+  {
+    id: 'promo-seed-blackfriday',
+    code: 'BLACKFRIDAY',
+    type: 'percent',
+    value: 30,
+    validUntil: '2026-12-01',
+    usesLeft: 100,
+    note: 'Чёрная пятница — скидка 30%',
+    createdAt: '2026-01-01',
+  },
+];
 
 // Helper-тип для отделения данных от actions при типизации
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -223,6 +278,10 @@ type Actions = Pick<
   | 'buySubscription'
   | 'cancelSubscription'
   | 'toggleWishlist'
+  | 'validatePromocode'
+  | 'addPromocode'
+  | 'updatePromocode'
+  | 'deletePromocode'
   | 'reset'
 >;
 
@@ -513,7 +572,7 @@ export const useArtumStore = create<ArtumState>()(
       },
 
       // ─── PURCHASE ─────────────────────────────────────────────────
-      buyCourse: (courseSlug) => {
+      buyCourse: (courseSlug, options) => {
         const { currentUserId } = get();
         if (!currentUserId) {
           return { ok: false, error: 'Сначала войдите в аккаунт' };
@@ -522,11 +581,24 @@ export const useArtumStore = create<ArtumState>()(
         if (!course) return { ok: false, error: 'Курс не найден' };
         const key: PurchaseKey = `${currentUserId}:${courseSlug}`;
         if (get().purchases[key]) return { ok: false, error: 'Курс уже куплен' };
+
+        let discountMinor = 0;
+        let usedPromocodeId: string | null = null;
+        if (options?.promocode) {
+          const validation = get().validatePromocode(options.promocode, courseSlug);
+          if (!validation.ok) {
+            return { ok: false, error: validation.error };
+          }
+          discountMinor = validation.discountMinor;
+          usedPromocodeId = validation.promocode.id;
+        }
+        const amountMinor = Math.max(0, course.priceMinor - discountMinor);
+
         const payment: StoredPayment = {
           id: makeId('pay'),
           userId: currentUserId,
           courseSlug,
-          amountMinor: course.priceMinor,
+          amountMinor,
           paidAt: new Date().toISOString(),
           method: 'card',
           status: 'succeeded',
@@ -534,8 +606,70 @@ export const useArtumStore = create<ArtumState>()(
         set((state) => ({
           purchases: { ...state.purchases, [key]: true },
           payments: [payment, ...state.payments],
+          promocodes: usedPromocodeId
+            ? state.promocodes.map((p) =>
+                p.id === usedPromocodeId && p.usesLeft !== null
+                  ? { ...p, usesLeft: Math.max(0, p.usesLeft - 1) }
+                  : p,
+              )
+            : state.promocodes,
         }));
+        return { ok: true, discountMinor };
+      },
+
+      validatePromocode: (code, _courseSlug) => {
+        const normalized = code.trim().toUpperCase();
+        const promo = get().promocodes.find((p) => p.code.toUpperCase() === normalized);
+        if (!promo) return { ok: false, error: 'Промокод не найден' };
+        if (promo.validUntil && new Date(promo.validUntil) < new Date()) {
+          return { ok: false, error: 'Срок действия промокода истёк' };
+        }
+        if (promo.usesLeft !== null && promo.usesLeft <= 0) {
+          return { ok: false, error: 'Промокод закончился' };
+        }
+        const course = getCourseEffective(get(), _courseSlug);
+        if (!course) return { ok: false, error: 'Курс не найден' };
+        const discount =
+          promo.type === 'percent'
+            ? Math.round((course.priceMinor * promo.value) / 100)
+            : Math.min(promo.value, course.priceMinor);
+        return { ok: true, promocode: promo, discountMinor: discount };
+      },
+
+      addPromocode: (input) => {
+        const normalized = input.code.trim().toUpperCase();
+        if (!/^[A-Z0-9_-]{3,32}$/.test(normalized)) {
+          return { ok: false, error: 'Код: только латиница/цифры/-_, 3-32 символа' };
+        }
+        if (get().promocodes.some((p) => p.code.toUpperCase() === normalized)) {
+          return { ok: false, error: 'Промокод с таким кодом уже существует' };
+        }
+        if (input.type === 'percent' && (input.value < 1 || input.value > 100)) {
+          return { ok: false, error: 'Процент должен быть 1-100' };
+        }
+        if (input.type === 'fixed' && input.value < 100) {
+          return { ok: false, error: 'Фикс. скидка должна быть >= 1 ₽ (100 копеек)' };
+        }
+        const promo: Promocode = {
+          ...input,
+          code: normalized,
+          id: makeId('promo'),
+          createdAt: new Date().toISOString(),
+        };
+        set((state) => ({ promocodes: [...state.promocodes, promo] }));
         return { ok: true };
+      },
+
+      updatePromocode: (id, patch) => {
+        set((state) => ({
+          promocodes: state.promocodes.map((p) =>
+            p.id === id ? { ...p, ...patch, code: (patch.code ?? p.code).toUpperCase() } : p,
+          ),
+        }));
+      },
+
+      deletePromocode: (id) => {
+        set((state) => ({ promocodes: state.promocodes.filter((p) => p.id !== id) }));
       },
 
       buySubscription: (period) => {
@@ -620,6 +754,7 @@ export const useArtumStore = create<ArtumState>()(
         certificates: state.certificates,
         subscriptions: state.subscriptions,
         wishlist: state.wishlist,
+        promocodes: state.promocodes,
       }),
     },
   ),

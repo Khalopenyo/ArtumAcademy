@@ -1,12 +1,13 @@
 'use client';
 
-import { useMemo, useTransition } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Check, ChevronLeft, Lock, Play, Users } from 'lucide-react';
+import { Check, ChevronLeft, Lock, Play, Tag, Users, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { CourseCard } from '@/components/artum/CourseCard';
 import { WishlistButton } from '@/components/artum/WishlistButton';
 import {
@@ -36,7 +37,14 @@ export default function CoursePage() {
   const user = useCurrentUser();
   const state = useArtumStore();
   const buyCourse = useArtumStore((s) => s.buyCourse);
+  const validatePromocode = useArtumStore((s) => s.validatePromocode);
   const [pending, startTransition] = useTransition();
+  const [promoCode, setPromoCode] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState<{
+    code: string;
+    discountMinor: number;
+  } | null>(null);
+  const [promoError, setPromoError] = useState<string | null>(null);
 
   const allCourses = useMemo(() => getAllCoursesEffective(state), [state]);
   const course = useMemo(
@@ -104,13 +112,18 @@ export default function CoursePage() {
     ctaLabel = pending ? 'Покупаем…' : 'Купить курс';
     ctaOnClick = () => {
       startTransition(() => {
-        const res = buyCourse(course!.slug);
+        const res = buyCourse(course!.slug, {
+          promocode: appliedPromo?.code,
+        });
         if (!res.ok) {
           toast.error(res.error);
           return;
         }
-        toast.success(`Курс «${course!.title}» куплен. Удачного обучения!`);
-        // refresh routes
+        const savedMsg =
+          res.discountMinor > 0
+            ? ` (с промокодом — сэкономили ${(res.discountMinor / 100).toLocaleString('ru-RU')} ₽)`
+            : '';
+        toast.success(`Курс «${course!.title}» куплен${savedMsg}. Удачного обучения!`);
         router.refresh();
       });
     };
@@ -315,17 +328,95 @@ export default function CoursePage() {
               <div className="text-xs uppercase tracking-wider text-muted-foreground">
                 {purchased ? 'Доступ' : 'Стоимость'}
               </div>
-              <div className="text-3xl font-bold">
-                {purchased ? 'Бессрочный' : formatPrice(course.priceMinor)}
-              </div>
-              {!purchased ? (
+              {purchased ? (
+                <div className="text-3xl font-bold">Бессрочный</div>
+              ) : appliedPromo ? (
+                <div className="space-y-1">
+                  <div className="text-xs text-muted-foreground line-through">
+                    {formatPrice(course.priceMinor)}
+                  </div>
+                  <div className="text-3xl font-bold text-primary">
+                    {formatPrice(Math.max(0, course.priceMinor - appliedPromo.discountMinor))}
+                  </div>
+                  <div className="text-xs text-primary">
+                    Скидка {formatPrice(appliedPromo.discountMinor)} ·{' '}
+                    <code className="font-mono">{appliedPromo.code}</code>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-3xl font-bold">{formatPrice(course.priceMinor)}</div>
+              )}
+              {!purchased && !appliedPromo ? (
                 <p className="text-xs text-muted-foreground">
                   Разовая оплата · доступ навсегда
                 </p>
-              ) : (
+              ) : null}
+              {purchased ? (
                 <p className="text-xs text-muted-foreground">Доступ ко всем урокам открыт</p>
-              )}
+              ) : null}
             </div>
+
+            {/* Promocode input — только для не купленных */}
+            {!purchased && user ? (
+              appliedPromo ? (
+                <div className="flex items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm">
+                  <span className="inline-flex items-center gap-1.5">
+                    <Tag className="size-3.5 text-primary" aria-hidden />
+                    Промокод <code className="font-mono font-medium">{appliedPromo.code}</code> применён
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAppliedPromo(null);
+                      setPromoCode('');
+                      setPromoError(null);
+                    }}
+                    aria-label="Снять промокод"
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="size-4" aria-hidden />
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Промокод"
+                      value={promoCode}
+                      onChange={(e) => {
+                        setPromoCode(e.target.value.toUpperCase());
+                        setPromoError(null);
+                      }}
+                      className="h-9 text-sm"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setPromoError(null);
+                        const res = validatePromocode(promoCode, course.slug);
+                        if (!res.ok) {
+                          setPromoError(res.error);
+                          return;
+                        }
+                        setAppliedPromo({
+                          code: res.promocode.code,
+                          discountMinor: res.discountMinor,
+                        });
+                        toast.success(`Промокод применён — скидка ${formatPrice(res.discountMinor)}`);
+                      }}
+                      disabled={!promoCode.trim()}
+                    >
+                      Применить
+                    </Button>
+                  </div>
+                  {promoError ? (
+                    <p className="text-xs text-destructive">{promoError}</p>
+                  ) : null}
+                </div>
+              )
+            ) : null}
 
             {purchased && progress.percent > 0 ? (
               <div className="space-y-1.5">
