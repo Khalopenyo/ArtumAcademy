@@ -1,11 +1,13 @@
 'use client';
 
-import { Suspense, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { Suspense, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Search, X } from 'lucide-react';
 
 import { CategoryPill } from '@/components/artum/CategoryPill';
 import { CourseCard } from '@/components/artum/CourseCard';
 import { UserStatsBlock } from '@/components/artum/UserStatsBlock';
+import { Input } from '@/components/ui/input';
 import {
   type CategoryId,
   CATEGORIES,
@@ -36,21 +38,43 @@ export default function DashboardPage() {
 }
 
 function DashboardInner() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const activeCategory = parseCategoryParam(searchParams.get('category'));
+  const initialQuery = searchParams.get('q') ?? '';
+  const [query, setQuery] = useState(initialQuery);
   const hydrated = useHydrated();
   const user = useCurrentUser();
   const state = useArtumStore();
   const certificates = useArtumStore((s) => s.certificates);
 
   const allCourses = useMemo(() => getAllCoursesEffective(state), [state]);
-  const filteredCourses = useMemo(
-    () =>
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredCourses = useMemo(() => {
+    const byCategory =
       activeCategory === 'all'
         ? allCourses
-        : allCourses.filter((c) => c.category === activeCategory),
-    [allCourses, activeCategory],
-  );
+        : allCourses.filter((c) => c.category === activeCategory);
+    if (!normalizedQuery) return byCategory;
+    return byCategory.filter(
+      (c) =>
+        c.title.toLowerCase().includes(normalizedQuery) ||
+        c.shortDescription.toLowerCase().includes(normalizedQuery) ||
+        c.longDescription.toLowerCase().includes(normalizedQuery),
+    );
+  }, [allCourses, activeCategory, normalizedQuery]);
+
+  function applyQuery(next: string) {
+    setQuery(next);
+    const params = new URLSearchParams(searchParams.toString());
+    if (next.trim()) {
+      params.set('q', next.trim());
+    } else {
+      params.delete('q');
+    }
+    const qs = params.toString();
+    router.replace(qs ? `/?${qs}` : '/', { scroll: false });
+  }
 
   const counts = useMemo(() => {
     const m = new Map<CategoryId | 'all', number>();
@@ -115,9 +139,9 @@ function DashboardInner() {
         </section>
       ) : null}
 
-      {/* Фильтры-пилюли */}
+      {/* Search + фильтры-пилюли */}
       <section aria-labelledby="catalog-heading" className="mb-6">
-        <div className="mb-4 flex items-end justify-between">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <h2 id="catalog-heading" className="text-xl font-semibold sm:text-2xl">
             Каталог курсов
           </h2>
@@ -125,6 +149,32 @@ function DashboardInner() {
             {filteredCourses.length} из {allCourses.length}
           </span>
         </div>
+
+        {/* Search input */}
+        <div className="relative mb-4">
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
+          <Input
+            type="search"
+            placeholder="Поиск по названию или описанию"
+            value={query}
+            onChange={(e) => applyQuery(e.target.value)}
+            className="pl-9 pr-9"
+          />
+          {query ? (
+            <button
+              type="button"
+              aria-label="Очистить поиск"
+              onClick={() => applyQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="size-4" aria-hidden />
+            </button>
+          ) : null}
+        </div>
+
         <nav aria-label="Категории курсов" className="flex flex-wrap gap-2">
           <CategoryPill
             categoryId="all"
@@ -149,7 +199,9 @@ function DashboardInner() {
       <section>
         {filteredCourses.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border bg-card/50 p-12 text-center text-muted-foreground">
-            В этой категории пока нет курсов. Загляните позже.
+            {normalizedQuery
+              ? `По запросу «${query}» ничего не найдено. Попробуйте другие слова.`
+              : 'В этой категории пока нет курсов. Загляните позже.'}
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
