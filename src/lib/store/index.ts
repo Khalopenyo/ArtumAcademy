@@ -60,6 +60,23 @@ export interface StoredCertificate {
 export type LessonProgressKey = `${string}:${string}`; // `${userId}:${lessonId}`
 export type PurchaseKey = `${string}:${string}`; // `${userId}:${courseSlug}`
 
+/** Подписка пользователя на «все курсы» — ТЗ §5.3 */
+export interface Subscription {
+  userId: string;
+  /** Тариф (на скелете: один тариф 'all_courses') */
+  tier: 'all_courses';
+  /** ISO дата начала */
+  startedAt: string;
+  /** ISO дата окончания (через 30 дней / 365 дней) */
+  expiresAt: string;
+  /** Стоимость в копейках */
+  amountMinor: number;
+  /** monthly / yearly */
+  period: 'monthly' | 'yearly';
+  /** Активна сейчас? Вычисляется через expiresAt > now */
+  cancelled: boolean;
+}
+
 /** Mock recovery-token: связывает random string с user id + expiresAt */
 export interface RecoveryToken {
   token: string;
@@ -94,6 +111,7 @@ interface ArtumState {
   purchases: Record<PurchaseKey, true>;
   payments: StoredPayment[];
   certificates: StoredCertificate[];
+  subscriptions: Subscription[];
 
   // ─── ACTIONS ──────────────────────────────────────────────────────
   // Auth
@@ -123,6 +141,11 @@ interface ArtumState {
   markLessonComplete: (lessonId: string) => void;
   unmarkLesson: (lessonId: string) => void;
   buyCourse: (courseSlug: string) => { ok: true } | { ok: false; error: string };
+  /** Оформление подписки на все курсы */
+  buySubscription: (period: 'monthly' | 'yearly') =>
+    | { ok: true }
+    | { ok: false; error: string };
+  cancelSubscription: () => void;
   /** Полная переинициализация (для тестов / админ-сброса) */
   reset: () => void;
 }
@@ -162,6 +185,7 @@ const initialState = (): Omit<ArtumState, keyof Actions> => ({
   purchases: {},
   payments: [],
   certificates: [],
+  subscriptions: [],
 });
 
 // Helper-тип для отделения данных от actions при типизации
@@ -182,8 +206,16 @@ type Actions = Pick<
   | 'markLessonComplete'
   | 'unmarkLesson'
   | 'buyCourse'
+  | 'buySubscription'
+  | 'cancelSubscription'
   | 'reset'
 >;
+
+/** Цены тарифов подписки на все курсы (в копейках) */
+export const SUBSCRIPTION_PRICES = {
+  monthly: 99_000, // 990 ₽/мес
+  yearly: 990_000, // 9 900 ₽/год (экономия 20%)
+} as const;
 
 // ────────────────────────────────────────────────────────────────────
 // STORE
@@ -420,6 +452,52 @@ export const useArtumStore = create<ArtumState>()(
         return { ok: true };
       },
 
+      buySubscription: (period) => {
+        const { currentUserId } = get();
+        if (!currentUserId) return { ok: false, error: 'Сначала войдите в аккаунт' };
+        const active = getActiveSubscription(get(), currentUserId);
+        if (active) return { ok: false, error: 'У вас уже есть активная подписка' };
+
+        const days = period === 'monthly' ? 30 : 365;
+        const now = new Date();
+        const expiresAt = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+        const amountMinor = SUBSCRIPTION_PRICES[period];
+
+        const sub: Subscription = {
+          userId: currentUserId,
+          tier: 'all_courses',
+          startedAt: now.toISOString(),
+          expiresAt: expiresAt.toISOString(),
+          amountMinor,
+          period,
+          cancelled: false,
+        };
+        const payment: StoredPayment = {
+          id: makeId('pay'),
+          userId: currentUserId,
+          courseSlug: '__subscription__',
+          amountMinor,
+          paidAt: now.toISOString(),
+          method: 'subscription',
+          status: 'succeeded',
+        };
+        set((state) => ({
+          subscriptions: [...state.subscriptions, sub],
+          payments: [payment, ...state.payments],
+        }));
+        return { ok: true };
+      },
+
+      cancelSubscription: () => {
+        const { currentUserId } = get();
+        if (!currentUserId) return;
+        set((state) => ({
+          subscriptions: state.subscriptions.map((s) =>
+            s.userId === currentUserId && !s.cancelled ? { ...s, cancelled: true } : s,
+          ),
+        }));
+      },
+
       reset: () => set(initialState()),
     }),
     {
@@ -439,6 +517,7 @@ export const useArtumStore = create<ArtumState>()(
         purchases: state.purchases,
         payments: state.payments,
         certificates: state.certificates,
+        subscriptions: state.subscriptions,
       }),
     },
   ),
@@ -485,7 +564,25 @@ export function isCoursePurchased(
   userId: string,
   courseSlug: string,
 ): boolean {
-  return state.purchases[`${userId}:${courseSlug}`] === true;
+  if (state.purchases[`${userId}:${courseSlug}`] === true) return true;
+  // Активная подписка даёт доступ ко всем курсам
+  return getActiveSubscription(state, userId) !== null;
+}
+
+/** Возвращает активную (не истёкшую, не отменённую) подписку или null */
+export function getActiveSubscription(
+  state: ArtumState,
+  userId: string,
+): Subscription | null {
+  const now = new Date();
+  return (
+    state.subscriptions.find(
+      (s) =>
+        s.userId === userId &&
+        !s.cancelled &&
+        new Date(s.expiresAt) > now,
+    ) ?? null
+  );
 }
 
 export function getCourseProgressFromStore(

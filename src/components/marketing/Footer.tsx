@@ -67,6 +67,14 @@ export function Footer({ className }: FooterProps) {
             </li>
             <li className="pt-3">
               <Link
+                href="/subscribe"
+                className="text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Подписка
+              </Link>
+            </li>
+            <li>
+              <Link
                 href="/about"
                 className="text-muted-foreground transition-colors hover:text-foreground"
               >

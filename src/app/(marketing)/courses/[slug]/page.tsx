@@ -310,6 +310,15 @@ export default function CoursePage() {
               </Button>
             )}
 
+            {!purchased ? (
+              <Link
+                href="/subscribe"
+                className="block rounded-md border border-dashed border-primary/30 bg-primary/5 p-3 text-center text-xs text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
+              >
+                Или оформите подписку — доступ ко всем курсам от <span className="font-semibold text-foreground">990 ₽/мес</span>
+              </Link>
+            ) : null}
+
             {/* Course meta summary */}
             <div className="space-y-2 border-t border-border pt-4 text-sm">
               <Meta label="Уроков" value={formatLessonsCount(lessonsCount)} />
