@@ -2,10 +2,12 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import { Award, Download, ExternalLink, ShieldCheck } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { getCategory } from '@/lib/mock/courses';
+import { downloadCertificatePdf } from '@/lib/pdf/certificate';
 import { getAllCoursesEffective, useArtumStore } from '@/lib/store';
 import { useCurrentUser } from '@/lib/store/hooks';
 import { cn } from '@/lib/utils';
@@ -93,9 +95,26 @@ export default function CertificatesPage() {
                     </div>
                   </div>
                   <div className="flex flex-col gap-2 pt-2 sm:flex-row">
-                    <Button variant="outline" size="sm" className="flex-1" disabled>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => {
+                        try {
+                          downloadCertificatePdf({
+                            certificate: cert,
+                            courseTitle: course?.title ?? cert.courseSlug,
+                            studentName: cert.studentName,
+                          });
+                          toast.success('Сертификат скачан');
+                        } catch (err) {
+                          toast.error('Не удалось сгенерировать PDF');
+                          console.error(err);
+                        }
+                      }}
+                    >
                       <Download className="mr-1 size-4" aria-hidden />
-                      PDF (позже)
+                      Скачать PDF
                     </Button>
                     {course ? (
                       <Button asChild variant="outline" size="sm" className="flex-1">
