@@ -1,143 +1,116 @@
-# VideoEdit Academy
+# Artum Academy
 
 ## What This Is
 
-Онлайн-платформа курсов по монтажу видео для рынка РФ и СНГ. Пользователь приходит на лендинг, регистрируется, оплачивает курс через ЮKassa и смотрит уроки через защищённый плеер Kinescope. Стек: Next.js 14 (App Router) + TypeScript + Supabase (БД/auth/storage) + Tailwind/shadcn.
+**Artum Academy** — образовательная онлайн-платформа с курсами по 7 направлениям: нейросети/AI, фотография, видеосъёмка, монтаж, дизайн, визуал, копирайтинг. Студент покупает курс (или подписку), смотрит видеоуроки, отслеживает прогресс, получает PDF-сертификат при 100% прохождении.
+
+Стек: Next.js 14 App Router + TypeScript + Supabase + Tailwind + shadcn/ui. Тёмная тема по умолчанию с фиолетовым акцентом `#A855F7`.
+
+## Project Pivot — 2026-05-24
+
+Этот репозиторий начинал жизнь как **VideoEdit Academy** (одно-курсовая MVP по монтажу видео). После прохождения Phase 1 (Dev Foundations) и частичного Phase 2 (skeleton чёрного по белому лендинга) проект развернут в **Artum Academy** — мульти-курсовую платформу по ТЗ `docs/ARTUM_Academy_TZ.docx`.
+
+**Что сохраняется из VideoEdit:**
+- Вся Phase 1 инфраструктура: env-parser, server-only boundary, pino logger, audit_log, Sentry SDK, RLS test harness, миграции (audit_log, user_consents, rate_limit_log, базовые courses/modules/lessons).
+- Базовая разметка скаффолда (Next.js App Router, route groups, shadcn-готовность).
+- Utility helpers: rate-limit wrapper, captcha verify, headers/client-ip.
+
+**Что выбрасывается:**
+- VideoEdit-specific брендинг (название, цвета, копия лендинга).
+- VideoEdit landing page + Hero/Programme/Pricing/FAQ.
+- VideoEdit privacy/oferta тексты.
+- VideoEdit Phase 2 планы (архивированы как `.planning/phases/2-auth-marketing-consent.archived/`).
 
 ## Core Value
 
-**Купивший пользователь должен иметь возможность смотреть оплаченный курс без перебоев и без возможности скачать видео.** Если этот путь не работает — нет смысла во всём остальном (это путь, который генерирует выручку и который защищает контент).
+**Студент покупает курс на тёмной красивой платформе и проходит уроки до конца, получая PDF-сертификат.** Это конверсионная воронка (каталог → покупка → просмотр → сертификат), которая генерирует выручку.
 
 ## Requirements
 
 ### Validated
 
-<!-- Уже реализовано в существующем каркасе (см. .planning/codebase/). Это не «доказано рынком», это «доказано что код существует и компилируется». -->
+<!-- Инфраструктура из Phase 1 (VideoEdit-период, переиспользуется как есть). -->
 
-- ✓ Каркас Next.js 14 App Router + TypeScript strict + Tailwind + shadcn-готовность — existing scaffold
-- ✓ Supabase-клиенты (`src/lib/supabase/{client,server,middleware}.ts`) — existing scaffold
-- ✓ Helpers авторизации `requireUser`, `requireRole` (`src/lib/auth/require.ts`) — existing scaffold
-- ✓ Базовая миграция БД с RLS-политиками: `profiles`, `user_roles`, `courses`, `modules`, `lessons` (`supabase/migrations/20260522000001_init_base_tables.sql`) — existing scaffold
-- ✓ Seed-данные для разработки (`supabase/seed.sql`) — existing scaffold
-- ✓ Конфиги: ESLint, Prettier, Vitest, Playwright, PostCSS, PWA-манифест — existing scaffold
-- ✓ Скиллы для Claude по конвенциям проекта (`.claude/skills/{videoedit-academy,database,api-conventions,ui-conventions,security,testing,workflow}`) — existing scaffold
-- ✓ Карта кодовой базы (`.planning/codebase/`) — added 2026-05-23
+- ✓ Env Zod parser с fail-fast при невалидных секретах (`src/env.ts`, `src/instrumentation.ts`) — Phase 1
+- ✓ `server-only` boundary на `src/lib/supabase/admin.ts` + ESLint rule + ESLint API smoke test — Phase 1
+- ✓ pino structured logger с redact (`src/lib/logger.ts`) — Phase 1
+- ✓ `audit_log` Postgres миграция + `auditLog()` helper с IP/UA capture — Phase 1
+- ✓ `@sentry/nextjs` ^8 wired (server/client/edge configs + scripts/sentry-test.ts) — Phase 1
+- ✓ RLS test harness (Vitest + Supabase local + 2-user cross-deny canary) — Phase 1
+- ✓ user_consents + rate_limit_log миграции + helper `rateLimit()` + `verifySmartCaptchaToken()` — Phase 2 plan-06 (универсальная инфра, переиспользуется в Artum)
+- ✓ shadcn/ui setup + ~10 примитивов (button, card, input, label, form, dialog, dropdown-menu, skeleton, sonner, accordion, checkbox, alert, tabs) — Phase 2 plan-01
 
-### Active
+### Active (Artum Скелет — этап 1 ТЗ §9)
 
-<!-- Milestone 1 (v1.0-mvp) — 4–6 недель соло. Цель: рабочий путь «зашёл → купил → смотрит». -->
+**Цель:** «вёрстка всех страниц, навигация, адаптив». Бэкенд / оплата / админка — последующие этапы.
 
-**Лендинг (M1):**
-- [ ] Главная страница с hero, описанием курса, тарифом, FAQ, футером — адаптивная
-- [ ] Публичная страница курса (превью, программа модулей, цена, CTA «Купить»)
+- [ ] **Дашборд** (`/`): хедер, слоган, 8 фильтров-пилюль (Все + 7 категорий), сетка карточек курсов 3 в ряд, блок статистики
+- [ ] **Карточка курса**: превью + цветной тег категории + название + метаданные (уроки/длительность/студенты) + прогресс-бар + ховер-фиолет
+- [ ] **Страница курса** (`/courses/[slug]`): обложка + описание + список уроков с галочками пройденных + общий прогресс + кнопка Начать/Продолжить
+- [ ] **Страница урока** (`/learn/[courseSlug]/[lessonId]`): видеоплеер placeholder + название + предыдущий/следующий + отметка пройденного
+- [ ] **Личный кабинет** (`/profile`): аватар + имя + купленные курсы + сертификаты + история оплат + настройки
+- [ ] **Страница сертификатов** (`/certificates`): список полученных + ссылка на PDF (заглушка)
+- [ ] **Авторизация** (`/login`, `/register`): email/пароль + Google OAuth заглушка + восстановление пароля
+- [ ] Тёмная тема по умолчанию, цветовая палитра из ТЗ §2
+- [ ] Адаптивная вёрстка (десктоп + мобила)
+- [ ] Навигация работает между всеми страницами (кнопки не "битые")
 
-**Авторизация (M2 из ТЗ):**
-- [ ] Регистрация по email + пароль с подтверждением email
-- [ ] Логин с сохранением сессии между перезагрузками
-- [ ] Восстановление пароля по email-ссылке
-- [ ] Логаут с любой страницы
-- [ ] Защищённый layout личного кабинета (редирект неавторизованных на `/login`)
-- [ ] Согласие на обработку перс. данных по 152-ФЗ на форме регистрации
+### Out of Scope (этап 1 — пока скелет, не реализуем)
 
-**Каталог и доступ к курсу:**
-- [ ] Структура «курс → модули → уроки» в БД (расширить существующие таблицы)
-- [ ] Страница каталога (1 курс в MVP, но архитектура под несколько)
-- [ ] Страница урока с защищённым плеером Kinescope (private signed URL, без download-кнопок)
-- [ ] Проверка доступа на сервере: только купивший видит уроки
-- [ ] Прогресс просмотра (отметка «урок начат / завершён»)
-
-**Платежи (ЮKassa):**
-- [ ] Создание платежа через серверный action (без service_role на клиенте)
-- [ ] Редирект на платёжную страницу ЮKassa
-- [ ] Webhook-обработчик `payment.succeeded` с проверкой подписи и идемпотентностью
-- [ ] Webhook-обработчик `payment.canceled` / `refund.succeeded`
-- [ ] Запись о покупке в `purchases` таблицу, выдача доступа к курсу
-- [ ] Страницы success / failure после оплаты
-
-**Личный кабинет (мини-версия):**
-- [ ] `/dashboard` со списком моих купленных курсов и прогрессом
-- [ ] Профиль (имя, email — readonly, кнопка «Удалить аккаунт» по 152-ФЗ)
-
-**Безопасность и compliance:**
-- [ ] RLS-политики на всех таблицах с пользовательскими данными
-- [ ] Rate limiting на auth/payment endpoints
-- [ ] Audit log платежей (создание, успех, ошибка, рефанд)
-- [ ] Политика обработки персональных данных (`/privacy`) + согласие при регистрации
-- [ ] Защита от download видео: Kinescope в private режиме, без MediaSource API, без правого клика
-
-**Эксплуатация:**
-- [ ] Smoke-тесты критического пути (E2E Playwright: регистрация → покупка → просмотр)
-- [ ] Деплой в production (Vercel или аналог)
-- [ ] Мониторинг ошибок (Sentry или аналог — решить в research)
-
-### Out of Scope
-
-<!-- Перенесено в Milestone 2 или позже. Каждое исключение с причиной, чтобы не возвращать без обсуждения. -->
-
-- **Админ-панель курсов/уроков** — перенесено в M2. В MVP курс создаётся напрямую через миграцию + seed. Админка — самостоятельный CRUD-проект на 2+ недели, не на критическом пути доходов.
-- **Email-рассылки через Unisender** — перенесено в M2. В MVP достаточно транзакционных писем от Supabase Auth (подтверждение, сброс пароля).
-- **Сертификаты после прохождения курса** — отложено до подтверждения спроса. Не критично для первой продажи.
-- **Промокоды и сложные тарифы** — отложено. ЮKassa поддерживает скидки через цену, ручная скидка достаточна для пилотной продажи.
-- **Несколько курсов / мульти-тариф** — архитектура поддерживает, но в v1 продаём один курс.
-- **Аналитика воронки и метрики** — после первых продаж смотрим Vercel Analytics + ЮKassa-дашборд. Свой dashboard — позже.
-- **OAuth-логины (Google, VK, Apple)** — отложено. Email/password покрывает 99% сценариев в РФ.
-- **Мобильное приложение** — никогда (платформа адаптивна, web-first).
-- **Скачивание уроков offline** — никогда (противоречит Core Value: защита контента).
+- **Бэкенд логика и реальный auth** — мокаем currentUser, формы не делают submit (toast "скоро")
+- **Реальный видеоплеер** — placeholder `<div>` с заглушкой
+- **Платёжная интеграция** — кнопка «Купить» открывает заглушку; провайдер ещё не выбран (Stripe vs ЮKassa)
+- **Сертификаты PDF** — список + dummy скачивание
+- **Админ-панель** — последний этап ТЗ
+- **Геймификация / ДЗ / рассрочка / расписание / офлайн** — явно нет в ТЗ §1.5
+- **152-ФЗ полная compliance** — фрагменты есть (privacy/oferta drafts, user_consents таблица), но рынок ещё не выбран → детали потом
 
 ## Context
 
-**Кодовая база (brownfield):** свежий скаффолд по ТЗ. Архитектура и конвенции уже описаны в `.claude/skills/videoedit-academy/SKILL.md` и подскиллах (`database`, `api-conventions`, `ui-conventions`, `security`, `testing`, `workflow`). Все агенты планирования должны читать эти скиллы как первоисточник правил.
+**ТЗ:** `docs/ARTUM_Academy_TZ.docx` — версия 1.0 предварительная от 2026-05-24. После утверждения скелета будут детальные макеты и спецификации.
 
-**Карта кода:** `.planning/codebase/` создана 2026-05-23 — 7 документов: STACK, INTEGRATIONS, ARCHITECTURE, STRUCTURE, CONVENTIONS, TESTING, CONCERNS. CONCERNS.md фиксирует основные риски на текущей точке (отсутствие реализаций, не каркаса).
+**Этапы ТЗ §9:**
+1. **Скелет сайта** — вёрстка всех страниц, навигация, адаптив ← **МЫ ЗДЕСЬ**
+2. Авторизация — реальный auth + Google OAuth
+3. Курсы и уроки — каталог + видеоплеер + прогресс из БД
+4. Оплата — выбор провайдера + страница тарифов
+5. Сертификаты — генерация PDF + страница верификации
+6. Админ-панель — CRUD курсов + drag-drop уроков + статистика
+7. Тестирование + запуск
 
-**ТЗ:** `docs/ТЗ_VideoEdit_Academy.docx` — основной первоисточник по фичам. Запросы F-XX.XX в требованиях ссылаются на этот документ.
+**Референсы (ТЗ §1.4):** KF Academy (structure), Skillbox (личный кабинет, каталог), VideoForMe (short courses).
 
-**Рынок:** РФ/СНГ. Это диктует выбор платёжной системы (ЮKassa, без Stripe), видео-хостинга (Kinescope или RuTube, не YouTube/Vimeo), правовых требований (152-ФЗ, явное согласие, право на удаление).
+**Категории (ТЗ §6):** Нейросети/AI, Фото, Видео, Монтаж, Дизайн, Визуал, Копирайтинг — каждая со своим цветным тегом.
 
-**Команда:** соло-разработчик + Claude Code. Поэтому приоритет: меньше движущихся частей, проверенные паттерны, агрессивная нарезка scope.
-
-**Брендинг и UX:** дизайн-система пока не определена — будет проработана в фазе UI (см. `/gsd:ui-phase`).
+**Команда:** соло-разработчик + Claude. Из-за этого приоритет: визуальный результат > архитектурная чистота на старте.
 
 ## Constraints
 
-- **Tech stack**: Next.js 14 App Router + TypeScript strict + Supabase + Tailwind + shadcn/ui — зафиксировано. Не менять без явного решения.
-- **Видео-хостинг**: Kinescope (private режим) — упомянут в проекте, альтернативы только при существенной экономии.
-- **Платежи**: ЮKassa (РФ-only). Stripe / Paddle / иные — out of scope.
-- **Email**: Unisender (РФ-only) для маркетинговых. Транзакционные — Supabase Auth по умолчанию.
-- **Compliance**: 152-ФЗ (хранение перс. данных, право на удаление, явное согласие, локализация на территории РФ если возможно).
-- **Timeline (M1)**: 4–6 недель соло. Мягкий дедлайн. Сигнал к резке scope, если фаза начинает выходить за расчётное время.
-- **Безопасность видео**: download должен быть программно затруднён (Kinescope private + отсутствие нативных download-кнопок). Полная защита от записи экрана недостижима — это известный компромисс.
-- **Бюджет**: минимальный (стартап одного человека). Supabase free → pro по необходимости, Vercel hobby/pro, Kinescope тариф под нагрузку. Без дорогих SaaS-зависимостей.
+- **Тёмная тема обязательна по умолчанию** (ТЗ §2 — палитра жёстко зафиксирована)
+- **Стек зафиксирован:** Next.js 14 App Router + TS strict + Supabase + Tailwind + shadcn
+- **Платёжная система не выбрана** — решаем после скелета
+- **Видео-хостинг не выбран** — Kinescope или Mux или S3+signed URLs или Cloudflare Stream
+- **Бюджет:** минимальный (стартап одного человека)
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Разбить продукт на 2 milestone'а: M1 (MVP) и M2 (полная админка/email/кабинет) | «Полный v1 за 4–6 недель соло» нереалистично (реально 12–16). Разбиение даёт shippable MVP в дедлайн без overpromise. | — Pending |
-| Vertical MVP (per-phase mode = mvp) | Соло + дедлайн + критический путь оплаты = нужны end-to-end слайсы, не горизонтальные слои. | — Pending |
-| Quality (Opus) model profile для планирующих агентов | Сложный продукт с compliance- и security-чувствительными частями. Дороже, но риск-аппетит низкий. | — Pending |
-| Все workflow-агенты включены (research + plan_check + verifier) | Соло-разработчик = одна пара глаз. Подстраховочные агенты компенсируют отсутствие code-review партнёра. | — Pending |
-| Зафиксировать ЮKassa как единственный платёжный провайдер | РФ-рынок, без альтернатив для приёма карт RU. Stripe/Paddle не работают с РФ. | — Pending |
-| Зафиксировать Kinescope как видео-хостинг | Упомянут в ТЗ, поддерживает private signed URL, хостится в РФ. RuTube как fallback если Kinescope станет дорог. | — Pending |
-| Адмика курсов — не в MVP, временно через миграции + seed | Админка = 2+ недели CRUD. Один курс в MVP можно создать через SQL. Высвобождает 2 недели на критический путь. | — Pending |
-| Email-рассылки Unisender — не в MVP | Достаточно транзакционных писем Supabase Auth для регистрации/сброса. Маркетинговые рассылки начинаются после первых клиентов. | — Pending |
+| Pivot с VideoEdit Academy на Artum Academy | Новый бизнес-вектор: мульти-категория вместо одного курса по монтажу | — Pending (только что сделано) |
+| Сохранить Phase 1 инфру | env Zod + server-only + pino + audit_log + Sentry + RLS harness — универсальны для любой EdTech-платформы | ✓ Good |
+| Архивировать Phase 2 plans (не удалять) | История планирования полезна для retrospective; ~30% planned components переиспользуются в Artum | ✓ Good |
+| Этап 1 (скелет) делаем напрямую, без GSD-фаз | Соло-разработчик хочет видеть UI быстро; GSD-ceremony затратна на этапе вёрстки макетов; вернёмся к ней на этапе 3 (реальные данные) | — Pending |
+| Mock auth (фейковый logged-in user) для скелета | Без реального auth дашборд/ЛК/уроки не выглядят как продукт; mock даёт визуальный результат | — Pending |
+| Платёжная система отложена до этапа 4 | ТЗ не требует определиться сейчас; решение зависит от рынка (РФ vs мир) | — Pending |
 
 ## Evolution
 
-This document evolves at phase transitions and milestone boundaries.
+This document evolves at major decisions and stage transitions per ТЗ §9.
 
-**After each phase transition** (via `/gsd-transition`):
-1. Requirements invalidated? → Move to Out of Scope with reason
-2. Requirements validated? → Move to Validated with phase reference
-3. New requirements emerged? → Add to Active
-4. Decisions to log? → Add to Key Decisions
-5. "What This Is" still accurate? → Update if drifted
-
-**After each milestone** (via `/gsd:complete-milestone`):
-1. Full review of all sections
-2. Core Value check — still the right priority?
-3. Audit Out of Scope — reasons still valid?
-4. Update Context with current state
+**After each ТЗ-stage:**
+1. Active → Validated с пометкой stage
+2. Out of Scope пересматривается для следующего stage
+3. Новые требования из детальных макетов → Active
 
 ---
-*Last updated: 2026-05-24 after initialization*
+*Last updated: 2026-05-24 after Artum Academy pivot from VideoEdit Academy.*

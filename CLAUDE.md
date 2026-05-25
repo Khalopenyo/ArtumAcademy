@@ -5,11 +5,13 @@
 <!-- GSD:project-start source:.planning/PROJECT.md -->
 ## Project
 
-**VideoEdit Academy** — онлайн-платформа платных курсов по монтажу видео для рынка РФ и СНГ.
+**Artum Academy** — образовательная онлайн-платформа с курсами по 7 направлениям: AI/нейросети, фотография, видеосъёмка, монтаж, дизайн, визуал, копирайтинг. Тёмная тема, фиолетовый акцент `#A855F7`.
 
-**Core Value:** купивший пользователь смотрит оплаченный курс без перебоев и без возможности скачать видео. Это решение, которое генерирует выручку и защищает контент — все архитектурные и продуктовые компромиссы судятся через эту призму.
+**Pivot history:** этот репо стартовал как `VideoEdit Academy` (single-course MVP). После Phase 1 (Dev Foundations) проект развёрнут в Artum по новому ТЗ `docs/ARTUM_Academy_TZ.docx`. Phase 1 инфраструктура переиспользуется как есть; Phase 2 (VideoEdit) архивирован в `.planning/phases/2-auth-marketing-consent.archived/`.
 
-**Текущий milestone:** M1 (v1.0-mvp, 4–6 недель соло). Объём: лендинг → регистрация (с 152-ФЗ согласием) → покупка курса через ЮKassa → просмотр уроков через защищённый Kinescope-плеер → мини-кабинет с моими курсами и прогрессом. Админка контента, email-маркетинг, сертификаты, мульти-курсность, OAuth — отложены в M2 или позже (см. `.planning/PROJECT.md` Out of Scope).
+**Core Value:** студент покупает курс на красивой тёмной платформе и проходит уроки до конца, получая PDF-сертификат. Конверсионная воронка каталог → покупка → просмотр → сертификат генерирует выручку.
+
+**Текущая стадия:** этап 1 ТЗ §9 — **скелет сайта** (вёрстка всех 6 страниц, навигация, адаптив). Без реального бэкенда, auth, оплаты, сертификатов PDF и админки — это следующие этапы по ТЗ §9.
 
 **Полный контекст:** `.planning/PROJECT.md` (validated/active/out-of-scope, ключевые решения, ограничения).
 
@@ -97,7 +99,7 @@ supabase/migrations/         SQL-миграции (только append-only в �
 - Webhook handler → service_role: **разрешено** (нужно для записи под полным правом)
 - Lesson page → Kinescope URL: signed server-side, **никогда не кэшируется** в localStorage/React Query/Sentry breadcrumbs
 
-**Build order (M1, 7 фаз — dev-first / prod-last):** см. `.planning/ROADMAP.md`. P1 Dev Foundations → P2 Auth+Marketing+Consent (dev SMTP) → P3 Catalog+Payment Redirect (ЮKassa sandbox) → P4 Webhook+Access Grant+Refund (sandbox) → P5 Video Player+Access Control (Kinescope test) → P6 Progress+Profile+E2E+Feature Complete (dev) → P7 Production Launch Prep (Supabase Pro+PITR, custom domain+DNS, custom SMTP, ЮKassa prod, юрист sign-off, RKN, financial smoke test).
+**Build order (этапы ТЗ §9):** (1) Скелет сайта ← **СЕЙЧАС** → (2) Авторизация Supabase + Google OAuth → (3) Курсы и уроки с БД → (4) Оплата (провайдер TBD: Stripe vs ЮKassa) → (5) Сертификаты PDF → (6) Админ-панель → (7) Тестирование + запуск.
 
 **Полная архитектура:** `.planning/codebase/ARCHITECTURE.md` (текущая) + `.planning/research/ARCHITECTURE.md` (целевая M1, 1050 строк, включая RLS-политики, payment flow, video access flow).
 
