@@ -3,7 +3,7 @@
 import { Suspense, useMemo } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Award, BookOpen, CreditCard, Settings } from 'lucide-react';
+import { Award, BookOpen, CreditCard, Heart, Settings } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -12,6 +12,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
+import { CourseCard } from '@/components/artum/CourseCard';
 import { ProfileSettings } from '@/components/artum/ProfileSettings';
 import {
   formatDuration,
@@ -23,12 +24,13 @@ import {
   getAllCoursesEffective,
   getCourseProgressFromStore,
   isCoursePurchased,
+  isInWishlist,
   useArtumStore,
 } from '@/lib/store';
 import { useCurrentUser } from '@/lib/store/hooks';
 import { cn } from '@/lib/utils';
 
-const VALID_TABS = new Set(['courses', 'certificates', 'payments', 'settings']);
+const VALID_TABS = new Set(['courses', 'wishlist', 'certificates', 'payments', 'settings']);
 
 export default function ProfilePage() {
   return (
@@ -50,6 +52,10 @@ function ProfileInner() {
   const allCourses = useMemo(() => getAllCoursesEffective(state), [state]);
   const purchased = useMemo(
     () => allCourses.filter((c) => isCoursePurchased(state, user.id, c.slug)),
+    [allCourses, state, user.id],
+  );
+  const wishlist = useMemo(
+    () => allCourses.filter((c) => isInWishlist(state, user.id, c.slug)),
     [allCourses, state, user.id],
   );
   const myPayments = useMemo(
@@ -111,6 +117,16 @@ function ProfileInner() {
             <BookOpen className="size-4" aria-hidden />
             <span className="hidden sm:inline">Мои курсы</span>
             <span className="sm:hidden">Курсы</span>
+          </TabsTrigger>
+          <TabsTrigger value="wishlist" className="gap-2">
+            <Heart className="size-4" aria-hidden />
+            <span className="hidden sm:inline">Избранное</span>
+            <span className="sm:hidden">Избр.</span>
+            {wishlist.length > 0 ? (
+              <span className="ml-0.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-secondary px-1.5 text-xs">
+                {wishlist.length}
+              </span>
+            ) : null}
           </TabsTrigger>
           <TabsTrigger value="certificates" className="gap-2">
             <Award className="size-4" aria-hidden />
@@ -179,6 +195,39 @@ function ProfileInner() {
                       </div>
                     </div>
                   </Link>
+                );
+              })}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Избранное */}
+        <TabsContent value="wishlist">
+          {wishlist.length === 0 ? (
+            <EmptyState
+              icon={<Heart className="size-10" aria-hidden />}
+              title="Избранное пусто"
+              hint="Сохраняйте интересные курсы кнопкой ♡, чтобы вернуться к ним позже."
+              cta={
+                <Button asChild>
+                  <Link href="/">Каталог курсов</Link>
+                </Button>
+              }
+            />
+          ) : (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {wishlist.map((course) => {
+                const isPurchased = isCoursePurchased(state, user.id, course.slug);
+                const progress = isPurchased
+                  ? getCourseProgressFromStore(state, user.id, course)
+                  : null;
+                return (
+                  <CourseCard
+                    key={course.id}
+                    course={course}
+                    purchased={isPurchased}
+                    progressPercent={progress?.percent ?? 0}
+                  />
                 );
               })}
             </div>

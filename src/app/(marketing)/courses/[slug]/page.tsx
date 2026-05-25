@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { Check, ChevronLeft, Lock, Play, Users } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { WishlistButton } from '@/components/artum/WishlistButton';
 import {
   formatDuration,
   formatLessonsCount,
@@ -135,16 +136,25 @@ export default function CoursePage() {
               )}
             />
             <div className="space-y-4 bg-card p-6 sm:p-8">
-              <span
-                className={cn(
-                  'inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium',
-                  category.tagBgClass,
-                  category.tagTextClass,
-                )}
-              >
-                <span aria-hidden>{category.emoji}</span>
-                {category.label}
-              </span>
+              <div className="flex items-start justify-between gap-3">
+                <span
+                  className={cn(
+                    'inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium',
+                    category.tagBgClass,
+                    category.tagTextClass,
+                  )}
+                >
+                  <span aria-hidden>{category.emoji}</span>
+                  {category.label}
+                </span>
+                {!purchased ? (
+                  <WishlistButton
+                    courseSlug={course.slug}
+                    courseTitle={course.title}
+                    size="md"
+                  />
+                ) : null}
+              </div>
               <h1 className="text-2xl font-bold leading-tight tracking-tight sm:text-3xl">
                 {course.title}
               </h1>

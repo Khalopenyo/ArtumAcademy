@@ -112,6 +112,8 @@ interface ArtumState {
   payments: StoredPayment[];
   certificates: StoredCertificate[];
   subscriptions: Subscription[];
+  /** {userId:courseSlug → true} избранное / wishlist */
+  wishlist: Record<string, true>;
 
   // ─── ACTIONS ──────────────────────────────────────────────────────
   // Auth
@@ -153,6 +155,7 @@ interface ArtumState {
     | { ok: true }
     | { ok: false; error: string };
   cancelSubscription: () => void;
+  toggleWishlist: (courseSlug: string) => void;
   /** Полная переинициализация (для тестов / админ-сброса) */
   reset: () => void;
 }
@@ -193,6 +196,7 @@ const initialState = (): Omit<ArtumState, keyof Actions> => ({
   payments: [],
   certificates: [],
   subscriptions: [],
+  wishlist: {},
 });
 
 // Helper-тип для отделения данных от actions при типизации
@@ -218,6 +222,7 @@ type Actions = Pick<
   | 'buyCourse'
   | 'buySubscription'
   | 'cancelSubscription'
+  | 'toggleWishlist'
   | 'reset'
 >;
 
@@ -579,6 +584,21 @@ export const useArtumStore = create<ArtumState>()(
         }));
       },
 
+      toggleWishlist: (courseSlug) => {
+        const { currentUserId } = get();
+        if (!currentUserId) return;
+        const key = `${currentUserId}:${courseSlug}`;
+        set((state) => {
+          const next = { ...state.wishlist };
+          if (next[key]) {
+            delete next[key];
+          } else {
+            next[key] = true;
+          }
+          return { wishlist: next };
+        });
+      },
+
       reset: () => set(initialState()),
     }),
     {
@@ -599,6 +619,7 @@ export const useArtumStore = create<ArtumState>()(
         payments: state.payments,
         certificates: state.certificates,
         subscriptions: state.subscriptions,
+        wishlist: state.wishlist,
       }),
     },
   ),
@@ -648,6 +669,14 @@ export function isCoursePurchased(
   if (state.purchases[`${userId}:${courseSlug}`] === true) return true;
   // Активная подписка даёт доступ ко всем курсам
   return getActiveSubscription(state, userId) !== null;
+}
+
+export function isInWishlist(
+  state: ArtumState,
+  userId: string,
+  courseSlug: string,
+): boolean {
+  return state.wishlist[`${userId}:${courseSlug}`] === true;
 }
 
 /** Возвращает активную (не истёкшую, не отменённую) подписку или null */

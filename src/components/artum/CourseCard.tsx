@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Play, Users } from 'lucide-react';
 
+import { WishlistButton } from '@/components/artum/WishlistButton';
 import {
   type Course,
   formatDuration,
@@ -74,7 +75,15 @@ export function CourseCard({
           <span className="absolute right-3 top-3 inline-flex items-center rounded-full bg-primary/90 px-2.5 py-1 text-xs font-medium text-primary-foreground backdrop-blur">
             Куплено
           </span>
-        ) : null}
+        ) : (
+          <div className="absolute right-3 top-3">
+            <WishlistButton
+              courseSlug={course.slug}
+              courseTitle={course.title}
+              stopParentLink
+            />
+          </div>
+        )}
       </div>
 
       <div className="space-y-3 p-5">
