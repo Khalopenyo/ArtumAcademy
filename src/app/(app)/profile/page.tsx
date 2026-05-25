@@ -3,7 +3,7 @@
 import { Suspense, useMemo } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Award, BookOpen, CreditCard, Settings, ShieldCheck } from 'lucide-react';
+import { Award, BookOpen, CreditCard, Settings } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -12,6 +12,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
+import { ProfileSettings } from '@/components/artum/ProfileSettings';
 import {
   formatDuration,
   formatPrice,
@@ -274,37 +275,7 @@ function ProfileInner() {
 
         {/* Настройки */}
         <TabsContent value="settings">
-          <div className="space-y-6">
-            <SettingsSection
-              icon={<ShieldCheck className="size-5" aria-hidden />}
-              title="Учётные данные"
-              description="Email и пароль для входа на платформу."
-            >
-              <SettingRow label="Email">
-                <span className="text-sm">{user.email}</span>
-                <Button variant="outline" size="sm" disabled>Изменить</Button>
-              </SettingRow>
-              <SettingRow label="Пароль">
-                <span className="text-sm text-muted-foreground">••••••••</span>
-                <Button variant="outline" size="sm" disabled>Сменить</Button>
-              </SettingRow>
-            </SettingsSection>
-
-            <SettingsSection
-              icon={<Settings className="size-5" aria-hidden />}
-              title="Профиль"
-              description="Имя отображается в сертификатах и в хедере."
-            >
-              <SettingRow label="Имя">
-                <span className="text-sm">{user.name}</span>
-                <Button variant="outline" size="sm" disabled>Изменить</Button>
-              </SettingRow>
-            </SettingsSection>
-
-            <p className="text-xs text-muted-foreground">
-              Редактирование появится на стадии с реальной БД. Сейчас данные хранятся локально.
-            </p>
-          </div>
+          <ProfileSettings user={user} />
         </TabsContent>
       </Tabs>
     </div>
@@ -345,38 +316,3 @@ function EmptyState({
   );
 }
 
-function SettingsSection({
-  icon,
-  title,
-  description,
-  children,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card">
-      <div className="flex items-start gap-3 border-b border-border p-5">
-        <div className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
-          {icon}
-        </div>
-        <div>
-          <h3 className="text-base font-semibold">{title}</h3>
-          <p className="text-sm text-muted-foreground">{description}</p>
-        </div>
-      </div>
-      <div className="divide-y divide-border">{children}</div>
-    </div>
-  );
-}
-
-function SettingRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex items-center justify-between gap-4 p-5">
-      <div className="text-sm font-medium">{label}</div>
-      <div className="flex items-center gap-3">{children}</div>
-    </div>
-  );
-}

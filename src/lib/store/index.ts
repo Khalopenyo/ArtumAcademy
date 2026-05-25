@@ -122,6 +122,12 @@ interface ArtumState {
     | { ok: true; user: StoredUser }
     | { ok: false; error: string };
   logoutUser: () => void;
+  updateProfile: (input: { name?: string; email?: string }) =>
+    | { ok: true }
+    | { ok: false; error: string };
+  changePassword: (input: { currentPassword: string; newPassword: string }) =>
+    | { ok: true }
+    | { ok: false; error: string };
   /** Создать recovery-token и вернуть его (на демо UI показывает inline) */
   requestPasswordReset: (email: string) =>
     | { ok: true; token: string; userName: string }
@@ -196,6 +202,8 @@ type Actions = Pick<
   | 'registerUser'
   | 'loginUser'
   | 'logoutUser'
+  | 'updateProfile'
+  | 'changePassword'
   | 'requestPasswordReset'
   | 'resetPasswordWithToken'
   | 'addCourse'
@@ -284,6 +292,58 @@ export const useArtumStore = create<ArtumState>()(
       },
 
       logoutUser: () => set({ currentUserId: null }),
+
+      updateProfile: ({ name, email }) => {
+        const { currentUserId } = get();
+        if (!currentUserId) return { ok: false, error: 'Сначала войдите в аккаунт' };
+        const me = get().users.find((u) => u.id === currentUserId);
+        if (!me) return { ok: false, error: 'Пользователь не найден' };
+        const normalizedEmail = email?.trim().toLowerCase();
+        if (normalizedEmail && normalizedEmail !== me.email) {
+          const taken = get().users.some(
+            (u) => u.id !== currentUserId && u.email.toLowerCase() === normalizedEmail,
+          );
+          if (taken) {
+            return { ok: false, error: 'Этот email уже занят другим пользователем' };
+          }
+        }
+        const newName = name?.trim();
+        set((state) => ({
+          users: state.users.map((u) =>
+            u.id === currentUserId
+              ? {
+                  ...u,
+                  name: newName && newName.length > 0 ? newName : u.name,
+                  email: normalizedEmail || u.email,
+                  initials: newName && newName.length > 0 ? getInitials(newName) : u.initials,
+                }
+              : u,
+          ),
+        }));
+        return { ok: true };
+      },
+
+      changePassword: ({ currentPassword, newPassword }) => {
+        const { currentUserId } = get();
+        if (!currentUserId) return { ok: false, error: 'Сначала войдите в аккаунт' };
+        const me = get().users.find((u) => u.id === currentUserId);
+        if (!me) return { ok: false, error: 'Пользователь не найден' };
+        if (me.password !== currentPassword) {
+          return { ok: false, error: 'Текущий пароль неверный' };
+        }
+        if (newPassword.length < 8) {
+          return { ok: false, error: 'Новый пароль должен быть минимум 8 символов' };
+        }
+        if (newPassword === currentPassword) {
+          return { ok: false, error: 'Новый пароль должен отличаться от текущего' };
+        }
+        set((state) => ({
+          users: state.users.map((u) =>
+            u.id === currentUserId ? { ...u, password: newPassword } : u,
+          ),
+        }));
+        return { ok: true };
+      },
 
       requestPasswordReset: (email) => {
         const normalized = email.trim().toLowerCase();
