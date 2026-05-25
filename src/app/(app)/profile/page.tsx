@@ -1,4 +1,8 @@
+'use client';
+
+import { Suspense, useMemo } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Award, BookOpen, CreditCard, Settings, ShieldCheck } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -11,40 +15,68 @@ import {
 import {
   formatDuration,
   formatPrice,
-  getCertificatedCourses,
   getCourseLessonsCount,
-  getCourseProgress,
   getCourseTotalDuration,
-  getPurchasedCourses,
-  getUserStats,
-  MOCK_CERTIFICATES,
-  MOCK_PAYMENTS,
 } from '@/lib/mock/courses';
-import { MOCK_CURRENT_USER } from '@/lib/mock/user';
+import {
+  getAllCoursesEffective,
+  getCourseProgressFromStore,
+  isCoursePurchased,
+  useArtumStore,
+} from '@/lib/store';
+import { useCurrentUser } from '@/lib/store/hooks';
 import { cn } from '@/lib/utils';
-
-interface ProfilePageProps {
-  searchParams: { tab?: string };
-}
 
 const VALID_TABS = new Set(['courses', 'certificates', 'payments', 'settings']);
 
-/**
- * Личный кабинет (ТЗ §4.5):
- *   - Аватар и имя пользователя
- *   - Список купленных курсов с прогрессом
- *   - Список полученных сертификатов
- *   - История оплат
- *   - Настройки профиля (смена пароля, email)
- */
-export default function ProfilePage({ searchParams }: ProfilePageProps) {
-  const initialTab = VALID_TABS.has(searchParams.tab ?? '')
-    ? (searchParams.tab as string)
+export default function ProfilePage() {
+  return (
+    <Suspense fallback={null}>
+      <ProfileInner />
+    </Suspense>
+  );
+}
+
+function ProfileInner() {
+  const searchParams = useSearchParams();
+  const initialTab = VALID_TABS.has(searchParams.get('tab') ?? '')
+    ? (searchParams.get('tab') as string)
     : 'courses';
 
-  const stats = getUserStats();
-  const purchased = getPurchasedCourses();
-  const certified = getCertificatedCourses();
+  const user = useCurrentUser()!; // AuthGate уже гарантирует
+  const state = useArtumStore();
+
+  const allCourses = useMemo(() => getAllCoursesEffective(state), [state]);
+  const purchased = useMemo(
+    () => allCourses.filter((c) => isCoursePurchased(state, user.id, c.slug)),
+    [allCourses, state, user.id],
+  );
+  const myPayments = useMemo(
+    () => state.payments.filter((p) => p.userId === user.id),
+    [state.payments, user.id],
+  );
+  const myCertificates = useMemo(
+    () => state.certificates.filter((c) => c.userId === user.id),
+    [state.certificates, user.id],
+  );
+
+  const stats = useMemo(() => {
+    const certs = myCertificates.length;
+    const active = purchased.filter((c) => {
+      const p = getCourseProgressFromStore(state, user.id, c);
+      return p.percent > 0 && p.percent < 100;
+    }).length;
+    const studySeconds = purchased.reduce((sum, c) => {
+      const p = getCourseProgressFromStore(state, user.id, c);
+      const totalDur = getCourseTotalDuration(c);
+      return sum + totalDur * (p.percent / 100);
+    }, 0);
+    return {
+      activeCourses: active,
+      certificates: certs,
+      studyHoursTotal: Math.round(studySeconds / 3600),
+    };
+  }, [purchased, myCertificates, state, user.id]);
 
   return (
     <div className="container mx-auto px-4 py-8 sm:py-10">
@@ -54,25 +86,24 @@ export default function ProfilePage({ searchParams }: ProfilePageProps) {
           aria-hidden
           className="flex size-20 shrink-0 items-center justify-center rounded-full bg-primary/20 text-2xl font-bold text-primary ring-4 ring-primary/30 sm:size-24 sm:text-3xl"
         >
-          {MOCK_CURRENT_USER.initials}
+          {user.initials}
         </span>
         <div className="flex-1 space-y-2">
           <h1 className="text-2xl font-bold leading-none tracking-tight sm:text-3xl">
-            {MOCK_CURRENT_USER.name}
+            {user.name}
           </h1>
-          <p className="text-sm text-muted-foreground">{MOCK_CURRENT_USER.email}</p>
+          <p className="text-sm text-muted-foreground">{user.email}</p>
           <p className="text-xs text-muted-foreground">
-            С нами с {new Date(MOCK_CURRENT_USER.registeredAt).toLocaleDateString('ru-RU')}
+            С нами с {new Date(user.registeredAt).toLocaleDateString('ru-RU')}
           </p>
         </div>
-        <div className="grid w-full grid-cols-3 gap-4 sm:w-auto sm:grid-cols-3">
+        <div className="grid w-full grid-cols-3 gap-4 sm:w-auto">
           <Stat label="Активные" value={String(stats.activeCourses)} />
           <Stat label="Сертификаты" value={String(stats.certificates)} />
           <Stat label="Часов" value={String(stats.studyHoursTotal)} />
         </div>
       </section>
 
-      {/* Tabs */}
       <Tabs defaultValue={initialTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-2 sm:inline-flex sm:w-auto">
           <TabsTrigger value="courses" className="gap-2">
@@ -112,7 +143,7 @@ export default function ProfilePage({ searchParams }: ProfilePageProps) {
           ) : (
             <div className="space-y-3">
               {purchased.map((course) => {
-                const progress = getCourseProgress(course);
+                const progress = getCourseProgressFromStore(state, user.id, course);
                 const lessons = getCourseLessonsCount(course);
                 const duration = getCourseTotalDuration(course);
                 return (
@@ -131,8 +162,7 @@ export default function ProfilePage({ searchParams }: ProfilePageProps) {
                     <div className="flex-1 space-y-1">
                       <h3 className="font-semibold">{course.title}</h3>
                       <div className="text-xs text-muted-foreground">
-                        {lessons} уроков · {formatDuration(duration)} · куплен{' '}
-                        {new Date(course.purchasedAt ?? '').toLocaleDateString('ru-RU')}
+                        {lessons} уроков · {formatDuration(duration)}
                       </div>
                       <div className="flex items-center gap-3 pt-1">
                         <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-secondary">
@@ -156,7 +186,7 @@ export default function ProfilePage({ searchParams }: ProfilePageProps) {
 
         {/* Сертификаты */}
         <TabsContent value="certificates">
-          {certified.length === 0 ? (
+          {myCertificates.length === 0 ? (
             <EmptyState
               icon={<Award className="size-10" aria-hidden />}
               title="Пока нет сертификатов"
@@ -164,7 +194,7 @@ export default function ProfilePage({ searchParams }: ProfilePageProps) {
             />
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
-              {MOCK_CERTIFICATES.map((cert) => (
+              {myCertificates.map((cert) => (
                 <div key={cert.id} className="space-y-3 rounded-2xl border border-border bg-card p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="inline-flex size-12 items-center justify-center rounded-xl bg-primary/15 text-primary">
@@ -178,7 +208,7 @@ export default function ProfilePage({ searchParams }: ProfilePageProps) {
                     <div className="text-xs uppercase tracking-wider text-muted-foreground">
                       Сертификат
                     </div>
-                    <h3 className="mt-1 font-semibold">{cert.courseTitle}</h3>
+                    <h3 className="mt-1 font-semibold">{cert.courseSlug}</h3>
                   </div>
                   <div className="text-xs text-muted-foreground">
                     № {cert.verificationNumber}
@@ -194,7 +224,7 @@ export default function ProfilePage({ searchParams }: ProfilePageProps) {
 
         {/* История оплат */}
         <TabsContent value="payments">
-          {MOCK_PAYMENTS.length === 0 ? (
+          {myPayments.length === 0 ? (
             <EmptyState
               icon={<CreditCard className="size-10" aria-hidden />}
               title="История оплат пуста"
@@ -212,27 +242,30 @@ export default function ProfilePage({ searchParams }: ProfilePageProps) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {MOCK_PAYMENTS.map((p) => (
-                    <tr key={p.id} className="hover:bg-secondary/50">
-                      <td className="px-5 py-3">
-                        <Link
-                          href={`/courses/${p.courseSlug}`}
-                          className="font-medium transition-colors hover:text-primary"
-                        >
-                          {p.courseTitle}
-                        </Link>
-                      </td>
-                      <td className="px-5 py-3 text-muted-foreground">
-                        {new Date(p.paidAt).toLocaleDateString('ru-RU')}
-                      </td>
-                      <td className="px-5 py-3 text-muted-foreground">
-                        {p.method === 'card' ? 'Карта' : p.method === 'sbp' ? 'СБП' : 'Подписка'}
-                      </td>
-                      <td className="px-5 py-3 text-right font-medium tabular-nums">
-                        {formatPrice(p.amountMinor)}
-                      </td>
-                    </tr>
-                  ))}
+                  {myPayments.map((p) => {
+                    const c = allCourses.find((x) => x.slug === p.courseSlug);
+                    return (
+                      <tr key={p.id} className="hover:bg-secondary/50">
+                        <td className="px-5 py-3">
+                          <Link
+                            href={`/courses/${p.courseSlug}`}
+                            className="font-medium transition-colors hover:text-primary"
+                          >
+                            {c?.title ?? p.courseSlug}
+                          </Link>
+                        </td>
+                        <td className="px-5 py-3 text-muted-foreground">
+                          {new Date(p.paidAt).toLocaleDateString('ru-RU')}
+                        </td>
+                        <td className="px-5 py-3 text-muted-foreground">
+                          {p.method === 'card' ? 'Карта' : p.method === 'sbp' ? 'СБП' : 'Подписка'}
+                        </td>
+                        <td className="px-5 py-3 text-right font-medium tabular-nums">
+                          {formatPrice(p.amountMinor)}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -248,12 +281,12 @@ export default function ProfilePage({ searchParams }: ProfilePageProps) {
               description="Email и пароль для входа на платформу."
             >
               <SettingRow label="Email">
-                <span className="text-sm">{MOCK_CURRENT_USER.email}</span>
-                <Button variant="outline" size="sm">Изменить</Button>
+                <span className="text-sm">{user.email}</span>
+                <Button variant="outline" size="sm" disabled>Изменить</Button>
               </SettingRow>
               <SettingRow label="Пароль">
                 <span className="text-sm text-muted-foreground">••••••••</span>
-                <Button variant="outline" size="sm">Сменить</Button>
+                <Button variant="outline" size="sm" disabled>Сменить</Button>
               </SettingRow>
             </SettingsSection>
 
@@ -263,23 +296,13 @@ export default function ProfilePage({ searchParams }: ProfilePageProps) {
               description="Имя отображается в сертификатах и в хедере."
             >
               <SettingRow label="Имя">
-                <span className="text-sm">{MOCK_CURRENT_USER.name}</span>
-                <Button variant="outline" size="sm">Изменить</Button>
+                <span className="text-sm">{user.name}</span>
+                <Button variant="outline" size="sm" disabled>Изменить</Button>
               </SettingRow>
             </SettingsSection>
 
-            <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-5">
-              <h3 className="text-base font-semibold text-destructive">Удалить аккаунт</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Удаление аккаунта необратимо. Все купленные курсы и сертификаты будут потеряны.
-              </p>
-              <Button variant="destructive" size="sm" className="mt-3">
-                Удалить аккаунт
-              </Button>
-            </div>
-
             <p className="text-xs text-muted-foreground">
-              На этапе 1 ТЗ (скелет) формы — заглушки. Реальные изменения добавятся на этапе 2 (Авторизация).
+              Редактирование появится на стадии с реальной БД. Сейчас данные хранятся локально.
             </p>
           </div>
         </TabsContent>
@@ -287,10 +310,6 @@ export default function ProfilePage({ searchParams }: ProfilePageProps) {
     </div>
   );
 }
-
-// ────────────────────────────────────────────────────────────────────
-// Helpers (local components)
-// ────────────────────────────────────────────────────────────────────
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (

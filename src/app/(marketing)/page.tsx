@@ -1,59 +1,106 @@
+'use client';
+
+import { Suspense, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
+
 import { CategoryPill } from '@/components/artum/CategoryPill';
 import { CourseCard } from '@/components/artum/CourseCard';
 import { UserStatsBlock } from '@/components/artum/UserStatsBlock';
 import {
   type CategoryId,
   CATEGORIES,
-  COURSES,
-  getCoursesByCategory,
-  getUserStats,
 } from '@/lib/mock/courses';
-import { MOCK_CURRENT_USER } from '@/lib/mock/user';
-
-interface DashboardPageProps {
-  searchParams: {
-    category?: string;
-  };
-}
+import {
+  getAllCoursesEffective,
+  getCourseProgressFromStore,
+  isCoursePurchased,
+  useArtumStore,
+} from '@/lib/store';
+import { useCurrentUser, useHydrated } from '@/lib/store/hooks';
 
 const VALID_CATEGORY_IDS = new Set([...CATEGORIES.map((c) => c.id), 'all'] as const);
 
-function parseCategoryParam(raw: string | undefined): CategoryId | 'all' {
+function parseCategoryParam(raw: string | undefined | null): CategoryId | 'all' {
   if (raw && VALID_CATEGORY_IDS.has(raw as never)) {
     return raw as CategoryId | 'all';
   }
   return 'all';
 }
 
-/**
- * Главная страница (Дашборд) — ТЗ §4.1.
- *
- * Структура:
- *   1. Слоган-блок с приветствием
- *   2. Фильтры-пилюли по 8 категориям (Все + 7 направлений)
- *   3. Сетка карточек курсов (3 в ряд на десктопе, 1 на мобиле)
- *   4. Блок статистики пользователя (активные курсы / сертификаты / время / прогресс)
- *
- * Server Component (Categories + Courses + User Stats — статические mock-данные).
- */
-export default function DashboardPage({ searchParams }: DashboardPageProps) {
-  const activeCategory = parseCategoryParam(searchParams.category);
-  const filteredCourses = getCoursesByCategory(activeCategory);
-  const stats = getUserStats();
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={null}>
+      <DashboardInner />
+    </Suspense>
+  );
+}
 
-  // Подсчёт курсов на каждую категорию для пилюль (опционально, для визуала)
-  const counts = new Map<CategoryId | 'all', number>();
-  counts.set('all', COURSES.length);
-  for (const cat of CATEGORIES) {
-    counts.set(cat.id, getCoursesByCategory(cat.id).length);
-  }
+function DashboardInner() {
+  const searchParams = useSearchParams();
+  const activeCategory = parseCategoryParam(searchParams.get('category'));
+  const hydrated = useHydrated();
+  const user = useCurrentUser();
+  const state = useArtumStore();
+  const certificates = useArtumStore((s) => s.certificates);
+
+  const allCourses = useMemo(() => getAllCoursesEffective(state), [state]);
+  const filteredCourses = useMemo(
+    () =>
+      activeCategory === 'all'
+        ? allCourses
+        : allCourses.filter((c) => c.category === activeCategory),
+    [allCourses, activeCategory],
+  );
+
+  const counts = useMemo(() => {
+    const m = new Map<CategoryId | 'all', number>();
+    m.set('all', allCourses.length);
+    for (const cat of CATEGORIES) {
+      m.set(cat.id, allCourses.filter((c) => c.category === cat.id).length);
+    }
+    return m;
+  }, [allCourses]);
+
+  const stats = useMemo(() => {
+    if (!user) return { activeCourses: 0, certificates: 0, studyHoursTotal: 0, overallProgressPercent: 0 };
+    const purchased = allCourses.filter((c) => isCoursePurchased(state, user.id, c.slug));
+    const certs = certificates.filter((c) => c.userId === user.id).length;
+    const active = purchased.filter((c) => {
+      const p = getCourseProgressFromStore(state, user.id, c);
+      return p.percent > 0 && p.percent < 100;
+    }).length;
+    const studySeconds = purchased.reduce((sum, c) => {
+      const p = getCourseProgressFromStore(state, user.id, c);
+      const totalDur = c.modules.flatMap((m) => m.lessons).reduce((s, l) => s + l.durationSec, 0);
+      return sum + totalDur * (p.percent / 100);
+    }, 0);
+    const overall =
+      purchased.length === 0
+        ? 0
+        : Math.round(
+            purchased.reduce((sum, c) => sum + getCourseProgressFromStore(state, user.id, c).percent, 0) /
+              purchased.length,
+          );
+    return {
+      activeCourses: active,
+      certificates: certs,
+      studyHoursTotal: Math.round(studySeconds / 3600),
+      overallProgressPercent: overall,
+    };
+  }, [user, allCourses, state, certificates]);
+
+  const greetingName = hydrated && user ? user.name.split(' ')[0] : 'Гость';
 
   return (
     <div className="container mx-auto px-4 py-8 sm:py-10">
       {/* Слоган / приветствие */}
       <section className="mb-8 space-y-3 sm:mb-10">
         <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-          Привет, {MOCK_CURRENT_USER.name.split(' ')[0]} 👋
+          {hydrated && user ? (
+            <>Привет, {greetingName} 👋</>
+          ) : (
+            <>Учитесь у профессионалов</>
+          )}
         </h1>
         <p className="max-w-2xl text-base text-muted-foreground sm:text-lg">
           Образовательная платформа с курсами по нейросетям, фото, видео, монтажу, дизайну,
@@ -61,10 +108,12 @@ export default function DashboardPage({ searchParams }: DashboardPageProps) {
         </p>
       </section>
 
-      {/* Блок статистики */}
-      <section className="mb-10">
-        <UserStatsBlock stats={stats} />
-      </section>
+      {/* Stats — только для залогиненных */}
+      {hydrated && user ? (
+        <section className="mb-10">
+          <UserStatsBlock stats={stats} />
+        </section>
+      ) : null}
 
       {/* Фильтры-пилюли */}
       <section aria-labelledby="catalog-heading" className="mb-6">
@@ -73,7 +122,7 @@ export default function DashboardPage({ searchParams }: DashboardPageProps) {
             Каталог курсов
           </h2>
           <span className="text-sm text-muted-foreground">
-            {filteredCourses.length} из {COURSES.length}
+            {filteredCourses.length} из {allCourses.length}
           </span>
         </div>
         <nav aria-label="Категории курсов" className="flex flex-wrap gap-2">
@@ -104,9 +153,18 @@ export default function DashboardPage({ searchParams }: DashboardPageProps) {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredCourses.map((course) => (
-              <CourseCard key={course.id} course={course} />
-            ))}
+            {filteredCourses.map((course) => {
+              const purchased = user ? isCoursePurchased(state, user.id, course.slug) : false;
+              const progress = user ? getCourseProgressFromStore(state, user.id, course) : null;
+              return (
+                <CourseCard
+                  key={course.id}
+                  course={course}
+                  purchased={purchased}
+                  progressPercent={progress?.percent ?? 0}
+                />
+              );
+            })}
           </div>
         )}
       </section>

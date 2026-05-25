@@ -1,27 +1,23 @@
+'use client';
+
+import { useMemo } from 'react';
 import Link from 'next/link';
 import { Award, Download, ExternalLink, ShieldCheck } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import {
-  MOCK_CERTIFICATES,
-  getCertificatedCourses,
-  getCategory,
-} from '@/lib/mock/courses';
+import { getCategory } from '@/lib/mock/courses';
+import { getAllCoursesEffective, useArtumStore } from '@/lib/store';
+import { useCurrentUser } from '@/lib/store/hooks';
 import { cn } from '@/lib/utils';
 
-export const metadata = {
-  title: 'Мои сертификаты',
-};
-
-/**
- * Страница сертификатов (ТЗ §4.5 + §5.4).
- *
- * Скелет: список сертификатов с превью-карточкой. PDF-скачивание и страница
- * верификации — этап 5 ТЗ §9.
- */
 export default function CertificatesPage() {
-  const certs = MOCK_CERTIFICATES;
-  const certifiedCourses = getCertificatedCourses();
+  const user = useCurrentUser()!;
+  const state = useArtumStore();
+  const allCourses = useMemo(() => getAllCoursesEffective(state), [state]);
+  const myCerts = useMemo(
+    () => state.certificates.filter((c) => c.userId === user.id),
+    [state.certificates, user.id],
+  );
 
   return (
     <div className="container mx-auto px-4 py-8 sm:py-10">
@@ -32,12 +28,12 @@ export default function CertificatesPage() {
         </p>
       </div>
 
-      {certs.length === 0 ? (
+      {myCerts.length === 0 ? (
         <EmptyState />
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {certs.map((cert, idx) => {
-            const course = certifiedCourses[idx];
+          {myCerts.map((cert) => {
+            const course = allCourses.find((c) => c.slug === cert.courseSlug);
             const category = course ? getCategory(course.category) : null;
             return (
               <article
@@ -45,7 +41,6 @@ export default function CertificatesPage() {
                 id={cert.id}
                 className="overflow-hidden rounded-2xl border border-border bg-card course-card-hover"
               >
-                {/* Preview "certificate" card */}
                 <div className="relative aspect-[4/3] overflow-hidden">
                   <div
                     aria-hidden
@@ -60,15 +55,12 @@ export default function CertificatesPage() {
                       Сертификат
                     </div>
                     <div className="line-clamp-2 text-sm font-semibold">
-                      {cert.courseTitle}
+                      {course?.title ?? cert.courseSlug}
                     </div>
-                    <div className="mt-2 text-xs opacity-70">
-                      {cert.studentName}
-                    </div>
+                    <div className="mt-2 text-xs opacity-70">{cert.studentName}</div>
                   </div>
                 </div>
 
-                {/* Meta */}
                 <div className="space-y-3 p-5">
                   {category ? (
                     <span
@@ -103,13 +95,15 @@ export default function CertificatesPage() {
                   <div className="flex flex-col gap-2 pt-2 sm:flex-row">
                     <Button variant="outline" size="sm" className="flex-1" disabled>
                       <Download className="mr-1 size-4" aria-hidden />
-                      PDF (этап 5)
+                      PDF (позже)
                     </Button>
-                    <Button asChild variant="outline" size="sm" className="flex-1">
-                      <Link href={`/courses/${cert.courseSlug}`}>
-                        <ExternalLink className="mr-1 size-4" aria-hidden />К курсу
-                      </Link>
-                    </Button>
+                    {course ? (
+                      <Button asChild variant="outline" size="sm" className="flex-1">
+                        <Link href={`/courses/${cert.courseSlug}`}>
+                          <ExternalLink className="mr-1 size-4" aria-hidden />К курсу
+                        </Link>
+                      </Button>
+                    ) : null}
                   </div>
                 </div>
               </article>
@@ -118,7 +112,6 @@ export default function CertificatesPage() {
         </div>
       )}
 
-      {/* Verification hint */}
       <section className="mt-12 flex items-start gap-4 rounded-2xl border border-border bg-card p-6">
         <div className="inline-flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
           <ShieldCheck className="size-6" aria-hidden />
@@ -126,9 +119,8 @@ export default function CertificatesPage() {
         <div className="space-y-1">
           <h2 className="text-base font-semibold">Проверка подлинности</h2>
           <p className="text-sm text-muted-foreground">
-            Каждый сертификат имеет уникальный номер — на этапе 5 ТЗ появится публичная
-            страница <code className="font-mono text-foreground">/verify/[номер]</code> для
-            проверки работодателями и другими внешними сторонами.
+            Каждый сертификат имеет уникальный номер — публичная страница верификации
+            появится позже.
           </p>
         </div>
       </section>

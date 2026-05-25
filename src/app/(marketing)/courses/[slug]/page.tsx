@@ -1,76 +1,120 @@
+'use client';
+
+import { useMemo, useTransition } from 'react';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { Check, ChevronLeft, Lock, Play, Users } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
-  COURSES,
   formatDuration,
   formatLessonsCount,
   formatPrice,
   formatStudentsCount,
   getCategory,
-  getCourseBySlug,
   getCourseLessonsCount,
-  getCourseProgress,
   getCourseTotalDuration,
-  getNextLesson,
 } from '@/lib/mock/courses';
+import {
+  getAllCoursesEffective,
+  getCourseProgressFromStore,
+  isCoursePurchased,
+  isLessonComplete,
+  useArtumStore,
+} from '@/lib/store';
+import { useCurrentUser, useHydrated } from '@/lib/store/hooks';
 import { cn } from '@/lib/utils';
 
-interface CoursePageProps {
-  params: { slug: string };
-}
+export default function CoursePage() {
+  const params = useParams<{ slug: string }>();
+  const router = useRouter();
+  const hydrated = useHydrated();
+  const user = useCurrentUser();
+  const state = useArtumStore();
+  const buyCourse = useArtumStore((s) => s.buyCourse);
+  const [pending, startTransition] = useTransition();
 
-/** Pre-render все курсы (mock — статика, нет проблем с SSG) */
-export function generateStaticParams() {
-  return COURSES.map((c) => ({ slug: c.slug }));
-}
+  const allCourses = useMemo(() => getAllCoursesEffective(state), [state]);
+  const course = useMemo(
+    () => allCourses.find((c) => c.slug === params.slug) ?? null,
+    [allCourses, params.slug],
+  );
 
-export function generateMetadata({ params }: CoursePageProps) {
-  const course = getCourseBySlug(params.slug);
-  if (!course) return { title: 'Курс не найден' };
-  return {
-    title: course.title,
-    description: course.shortDescription,
-  };
-}
+  if (!hydrated) {
+    return null; // SSR-pass: пусто на гидрейте
+  }
 
-/**
- * Страница курса (ТЗ §4.3):
- *   - Обложка с описанием
- *   - Список уроков с номерами, длительностью, галочками пройденного
- *   - Общий прогресс
- *   - Кнопка «Начать» / «Продолжить» / «Купить»
- */
-export default function CoursePage({ params }: CoursePageProps) {
-  const course = getCourseBySlug(params.slug);
   if (!course) {
-    notFound();
+    return (
+      <div className="container mx-auto px-4 py-12 text-center text-muted-foreground">
+        Курс не найден.{' '}
+        <Link href="/" className="text-primary hover:underline">
+          Вернуться в каталог
+        </Link>
+      </div>
+    );
   }
 
   const category = getCategory(course.category);
-  const progress = getCourseProgress(course);
   const lessonsCount = getCourseLessonsCount(course);
   const totalDuration = getCourseTotalDuration(course);
-  const next = getNextLesson(course);
+
+  const purchased = user ? isCoursePurchased(state, user.id, course.slug) : false;
+  const progress = user
+    ? getCourseProgressFromStore(state, user.id, course)
+    : { percent: 0, completedLessons: 0, totalLessons: lessonsCount };
+
+  // Сертификат выдан?
+  const hasCertificate = user
+    ? state.certificates.some(
+        (c) => c.userId === user.id && c.courseSlug === course.slug,
+      )
+    : false;
+
+  // Find next not-completed lesson (для CTA «Продолжить»)
+  function findNextLesson() {
+    if (!user) return null;
+    for (const m of course!.modules) {
+      for (const l of m.lessons) {
+        if (!isLessonComplete(state, user.id, l.id)) return l;
+      }
+    }
+    return null;
+  }
+  const nextLesson = findNextLesson();
 
   // CTA logic
-  let ctaLabel = 'Купить курс';
+  let ctaLabel: string;
   let ctaHref: string | null = null;
-  if (course.purchased) {
-    if (next) {
-      ctaLabel = progress.percent > 0 ? 'Продолжить' : 'Начать обучение';
-      ctaHref = `/learn/${course.slug}/${next.lesson.id}`;
-    } else {
-      ctaLabel = 'Курс завершён';
-      ctaHref = null;
-    }
+  let ctaOnClick: (() => void) | null = null;
+
+  if (!user) {
+    ctaLabel = 'Войти и купить';
+    ctaHref = `/login?next=${encodeURIComponent(`/courses/${course.slug}`)}`;
+  } else if (!purchased) {
+    ctaLabel = pending ? 'Покупаем…' : 'Купить курс';
+    ctaOnClick = () => {
+      startTransition(() => {
+        const res = buyCourse(course!.slug);
+        if (!res.ok) {
+          toast.error(res.error);
+          return;
+        }
+        toast.success(`Курс «${course!.title}» куплен. Удачного обучения!`);
+        // refresh routes
+        router.refresh();
+      });
+    };
+  } else if (nextLesson) {
+    ctaLabel = progress.percent > 0 ? 'Продолжить' : 'Начать обучение';
+    ctaHref = `/learn/${course.slug}/${nextLesson.id}`;
+  } else {
+    ctaLabel = 'Курс пройден';
   }
 
   return (
     <div className="container mx-auto px-4 py-8 sm:py-10">
-      {/* Breadcrumb */}
       <Link
         href="/"
         className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -82,7 +126,6 @@ export default function CoursePage({ params }: CoursePageProps) {
       <div className="grid gap-8 lg:grid-cols-3">
         {/* Левая колонка — описание + уроки */}
         <div className="space-y-8 lg:col-span-2">
-          {/* Header card with gradient cover */}
           <div className="overflow-hidden rounded-2xl border border-border">
             <div
               aria-hidden
@@ -120,13 +163,13 @@ export default function CoursePage({ params }: CoursePageProps) {
             </div>
           </div>
 
-          {/* Программа курса */}
+          {/* Программа */}
           <section aria-labelledby="programme-heading" className="space-y-4">
             <div className="flex items-end justify-between">
               <h2 id="programme-heading" className="text-xl font-semibold sm:text-2xl">
                 Программа
               </h2>
-              {course.purchased && progress.percent > 0 ? (
+              {purchased && progress.percent > 0 ? (
                 <span className="text-sm text-muted-foreground">
                   Прошли {progress.completedLessons} из {progress.totalLessons} уроков
                 </span>
@@ -148,19 +191,19 @@ export default function CoursePage({ params }: CoursePageProps) {
                   </div>
                   <ul className="divide-y divide-border">
                     {module.lessons.map((lesson, lessonIdx) => {
-                      const canOpen = course.purchased || lesson.preview;
+                      const canOpen = purchased || lesson.preview;
+                      const completed = user
+                        ? isLessonComplete(state, user.id, lesson.id)
+                        : false;
                       const lessonNumber = `${moduleIdx + 1}.${lessonIdx + 1}`;
                       const rowClasses = cn(
                         'flex items-center gap-4 p-4 transition-colors',
-                        canOpen
-                          ? 'hover:bg-secondary'
-                          : 'cursor-not-allowed opacity-60',
+                        canOpen ? 'hover:bg-secondary' : 'cursor-not-allowed opacity-60',
                       );
                       const Inner = (
                         <>
-                          {/* Status indicator */}
                           <span className="shrink-0">
-                            {lesson.completed ? (
+                            {completed ? (
                               <span className="inline-flex size-8 items-center justify-center rounded-full bg-primary/20 text-primary">
                                 <Check className="size-4" aria-hidden />
                               </span>
@@ -174,7 +217,6 @@ export default function CoursePage({ params }: CoursePageProps) {
                               </span>
                             )}
                           </span>
-                          {/* Title + number */}
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 text-sm">
                               <span className="font-mono text-xs text-muted-foreground">
@@ -183,7 +225,7 @@ export default function CoursePage({ params }: CoursePageProps) {
                               <span className="truncate font-medium text-foreground">
                                 {lesson.title}
                               </span>
-                              {lesson.preview && !course.purchased ? (
+                              {lesson.preview && !purchased ? (
                                 <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs text-primary">
                                   Превью
                                 </span>
@@ -222,27 +264,23 @@ export default function CoursePage({ params }: CoursePageProps) {
         {/* Правая колонка — sticky CTA card */}
         <aside className="lg:col-span-1">
           <div className="sticky top-24 space-y-4 rounded-2xl border border-border bg-card p-6">
-            {/* Price */}
             <div className="space-y-1">
               <div className="text-xs uppercase tracking-wider text-muted-foreground">
-                {course.purchased ? 'Доступ' : 'Стоимость'}
+                {purchased ? 'Доступ' : 'Стоимость'}
               </div>
               <div className="text-3xl font-bold">
-                {course.purchased ? 'Бессрочный' : formatPrice(course.priceMinor)}
+                {purchased ? 'Бессрочный' : formatPrice(course.priceMinor)}
               </div>
-              {!course.purchased ? (
+              {!purchased ? (
                 <p className="text-xs text-muted-foreground">
                   Разовая оплата · доступ навсегда
                 </p>
               ) : (
-                <p className="text-xs text-muted-foreground">
-                  Куплен {new Date(course.purchasedAt ?? '').toLocaleDateString('ru-RU')}
-                </p>
+                <p className="text-xs text-muted-foreground">Доступ ко всем урокам открыт</p>
               )}
             </div>
 
-            {/* Progress bar */}
-            {course.purchased && progress.percent > 0 ? (
+            {purchased && progress.percent > 0 ? (
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">Прогресс</span>
@@ -258,10 +296,13 @@ export default function CoursePage({ params }: CoursePageProps) {
               </div>
             ) : null}
 
-            {/* CTA */}
             {ctaHref ? (
               <Button asChild size="lg" className="w-full">
                 <Link href={ctaHref}>{ctaLabel}</Link>
+              </Button>
+            ) : ctaOnClick ? (
+              <Button size="lg" className="w-full" onClick={ctaOnClick} disabled={pending}>
+                {ctaLabel}
               </Button>
             ) : (
               <Button size="lg" className="w-full" disabled>
@@ -277,7 +318,7 @@ export default function CoursePage({ params }: CoursePageProps) {
               <Meta label="Категория" value={category.label} />
               <Meta
                 label="Сертификат"
-                value={course.certificateIssued ? 'Получен' : 'После 100% прохождения'}
+                value={hasCertificate ? 'Получен' : 'После 100% прохождения'}
               />
             </div>
           </div>
