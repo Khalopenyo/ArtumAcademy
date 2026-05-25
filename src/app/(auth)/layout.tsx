@@ -1,21 +1,31 @@
-import { Header } from '@/components/marketing/Header';
+import Link from 'next/link';
+
+import { Logo } from '@/components/shared/Logo';
 
 /**
- * Auth route-group layout — future-proof slot for /login, /register, etc.
+ * Auth route-group layout — минимальная chrome для /login, /register, /forgot-password.
  *
- * Plan-01 decision (UI-SPEC §3.1 + RESEARCH §Recommended File Structure):
- *   Auth pages live under (marketing)/ for now (consistent with Supabase Next.js docs).
- *   This (auth) group is created empty so future plans can opt-in by moving routes here.
- *   Currently no routes are attached → this layout adds zero runtime overhead.
- *
- * Reuses marketing Header for visual continuity. A minimal-header variant can be added
- * later if conversion testing shows the marketing nav distracts from auth flow.
+ * Дизайн: только лого + центрированная карточка формы. Это снижает отвлечение
+ * на этапе конверсии (стандартный паттерн EdTech: KF Academy, Skillbox имеют
+ * аналогичный авторизационный flow).
  */
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <Header />
-      <main className="container mx-auto flex-1 max-w-md py-12">{children}</main>
+      <header className="border-b border-border bg-background/95 backdrop-blur">
+        <div className="container mx-auto flex h-16 items-center justify-between">
+          <Logo className="text-xl" />
+          <Link
+            href="/"
+            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            На главную
+          </Link>
+        </div>
+      </header>
+      <main className="container mx-auto flex flex-1 items-center justify-center py-8">
+        <div className="w-full max-w-md">{children}</div>
+      </main>
     </div>
   );
 }

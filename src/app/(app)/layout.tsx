@@ -1,12 +1,22 @@
-// Auth gate added in plan-08 (requireUser → redirect /login?next=...);
-// chrome (AppHeader) + EmailVerificationBanner added in plan-10.
-// This minimal stub lets plan-10's /dashboard render in dev before plan-08 hardens the gate.
+import { Footer } from '@/components/marketing/Footer';
+import { Header } from '@/components/marketing/Header';
 
 /**
- * App route-group layout — auth-gated zone (will gate in plan-08, chrome in plan-10).
+ * App route-group layout — auth-gated zone (этап 2 ТЗ §9 поставит requireUser).
  *
- * For now: pure passthrough so the group exists and any (app)/page.tsx renders cleanly.
+ * На этапе 1 (скелет): mock currentUser в Header показывает залогиненную версию
+ * всегда. На этапе 2 здесь будет:
+ *   const user = await requireUser({ next: pathname });
+ * с редиректом на /login если null.
+ *
+ * Chrome = Header + Footer (тот же, что у (marketing)) — единый визуальный язык.
  */
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <Header />
+      <main className="flex-1">{children}</main>
+      <Footer />
+    </div>
+  );
 }
