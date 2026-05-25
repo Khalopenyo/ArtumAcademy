@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { BookOpen, ShieldCheck, Users } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { RevenueChart } from '@/components/artum/RevenueChart';
 import { getAllCoursesEffective, useArtumStore } from '@/lib/store';
 
 /**
@@ -54,7 +55,7 @@ export default function AdminHomePage() {
       </div>
 
       {/* Stats overview */}
-      <section className="mb-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <section className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard label="Пользователей" value={String(totals.totalUsers)} />
         <StatCard label="Курсов" value={String(totals.totalCourses)} />
         <StatCard label="Уроков" value={String(totals.totalLessons)} />
@@ -64,6 +65,11 @@ export default function AdminHomePage() {
           label="Доход (mock)"
           value={`${new Intl.NumberFormat('ru-RU').format(totals.totalRevenue / 100)} ₽`}
         />
+      </section>
+
+      {/* Revenue chart */}
+      <section className="mb-10">
+        <RevenueChart payments={state.payments} months={6} />
       </section>
 
       {/* Quick links */}
