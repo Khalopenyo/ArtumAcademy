@@ -60,12 +60,23 @@ export interface StoredCertificate {
 export type LessonProgressKey = `${string}:${string}`; // `${userId}:${lessonId}`
 export type PurchaseKey = `${string}:${string}`; // `${userId}:${courseSlug}`
 
+/** Mock recovery-token: связывает random string с user id + expiresAt */
+export interface RecoveryToken {
+  token: string;
+  userId: string;
+  /** ISO; 1 час с момента создания */
+  expiresAt: string;
+  used: boolean;
+}
+
 interface ArtumState {
   // ─── AUTH ─────────────────────────────────────────────────────────
   /** Все зарегистрированные пользователи (включая seed) */
   users: StoredUser[];
   /** ID активной сессии (null = гость) */
   currentUserId: string | null;
+  /** Mock recovery tokens — на демо отображается inline (toast + ссылка) */
+  recoveryTokens: RecoveryToken[];
 
   // ─── CATALOG (mutations поверх COURSES const) ─────────────────────
   /**
@@ -93,6 +104,14 @@ interface ArtumState {
     | { ok: true; user: StoredUser }
     | { ok: false; error: string };
   logoutUser: () => void;
+  /** Создать recovery-token и вернуть его (на демо UI показывает inline) */
+  requestPasswordReset: (email: string) =>
+    | { ok: true; token: string; userName: string }
+    | { ok: false; error: string };
+  /** Установить новый пароль по token */
+  resetPasswordWithToken: (token: string, newPassword: string) =>
+    | { ok: true; email: string }
+    | { ok: false; error: string };
   // Catalog mutations (admin)
   addCourse: (course: Course) => void;
   updateCourse: (slug: string, patch: Partial<Course>) => void;
@@ -136,6 +155,7 @@ const SEED_USERS: StoredUser[] = [
 const initialState = (): Omit<ArtumState, keyof Actions> => ({
   users: SEED_USERS,
   currentUserId: null, // По умолчанию гость; залогиниться через /login
+  recoveryTokens: [],
   customCourses: [],
   hiddenSlugs: [],
   lessonProgress: {},
@@ -151,6 +171,8 @@ type Actions = Pick<
   | 'registerUser'
   | 'loginUser'
   | 'logoutUser'
+  | 'requestPasswordReset'
+  | 'resetPasswordWithToken'
   | 'addCourse'
   | 'updateCourse'
   | 'deleteCourse'
@@ -228,6 +250,46 @@ export const useArtumStore = create<ArtumState>()(
       },
 
       logoutUser: () => set({ currentUserId: null }),
+
+      requestPasswordReset: (email) => {
+        const normalized = email.trim().toLowerCase();
+        const user = get().users.find((u) => u.email.toLowerCase() === normalized);
+        if (!user) {
+          return { ok: false, error: 'Пользователь с таким email не найден' };
+        }
+        const token = makeId('rec').replace('rec-', '');
+        const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+        set((state) => ({
+          recoveryTokens: [
+            ...state.recoveryTokens.filter((t) => t.userId !== user.id),
+            { token, userId: user.id, expiresAt, used: false },
+          ],
+        }));
+        return { ok: true, token, userName: user.name };
+      },
+
+      resetPasswordWithToken: (token, newPassword) => {
+        const rec = get().recoveryTokens.find((t) => t.token === token);
+        if (!rec) return { ok: false, error: 'Ссылка неверна или устарела' };
+        if (rec.used) return { ok: false, error: 'Эта ссылка уже использована' };
+        if (new Date(rec.expiresAt) < new Date()) {
+          return { ok: false, error: 'Срок действия ссылки истёк (1 час)' };
+        }
+        if (newPassword.length < 8) {
+          return { ok: false, error: 'Пароль должен быть минимум 8 символов' };
+        }
+        const user = get().users.find((u) => u.id === rec.userId);
+        if (!user) return { ok: false, error: 'Пользователь не найден' };
+        set((state) => ({
+          users: state.users.map((u) =>
+            u.id === rec.userId ? { ...u, password: newPassword } : u,
+          ),
+          recoveryTokens: state.recoveryTokens.map((t) =>
+            t.token === token ? { ...t, used: true } : t,
+          ),
+        }));
+        return { ok: true, email: user.email };
+      },
 
       // ─── CATALOG (admin actions) ──────────────────────────────────
       addCourse: (course) => {
@@ -370,6 +432,7 @@ export const useArtumStore = create<ArtumState>()(
       partialize: (state) => ({
         users: state.users,
         currentUserId: state.currentUserId,
+        recoveryTokens: state.recoveryTokens,
         customCourses: state.customCourses,
         hiddenSlugs: state.hiddenSlugs,
         lessonProgress: state.lessonProgress,
