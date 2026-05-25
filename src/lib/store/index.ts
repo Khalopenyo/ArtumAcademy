@@ -137,6 +137,7 @@ interface ArtumState {
   addLesson: (courseSlug: string, moduleId: string, lesson: Lesson) => void;
   updateLesson: (courseSlug: string, moduleId: string, lessonId: string, patch: Partial<Lesson>) => void;
   deleteLesson: (courseSlug: string, moduleId: string, lessonId: string) => void;
+  reorderLessons: (courseSlug: string, moduleId: string, lessonIds: string[]) => void;
   // Progress / Purchase / Cert
   markLessonComplete: (lessonId: string) => void;
   unmarkLesson: (lessonId: string) => void;
@@ -203,6 +204,7 @@ type Actions = Pick<
   | 'addLesson'
   | 'updateLesson'
   | 'deleteLesson'
+  | 'reorderLessons'
   | 'markLessonComplete'
   | 'unmarkLesson'
   | 'buyCourse'
@@ -398,6 +400,25 @@ export const useArtumStore = create<ArtumState>()(
             ? { ...m, lessons: m.lessons.filter((l) => l.id !== lessonId) }
             : m,
         );
+        updateCourse(courseSlug, { modules: updatedModules });
+      },
+
+      reorderLessons: (courseSlug, moduleId, lessonIds) => {
+        const { updateCourse } = get();
+        const course = getCourseEffective(get(), courseSlug);
+        if (!course) return;
+        const updatedModules = course.modules.map((m) => {
+          if (m.id !== moduleId) return m;
+          const byId = new Map(m.lessons.map((l) => [l.id, l]));
+          const reordered = lessonIds
+            .map((id) => byId.get(id))
+            .filter((l): l is NonNullable<typeof l> => !!l);
+          // Гарантируем что не теряем уроков (если frontend дал неполный список)
+          for (const l of m.lessons) {
+            if (!reordered.find((r) => r.id === l.id)) reordered.push(l);
+          }
+          return { ...m, lessons: reordered };
+        });
         updateCourse(courseSlug, { modules: updatedModules });
       },
 

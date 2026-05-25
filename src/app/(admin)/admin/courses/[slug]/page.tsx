@@ -4,13 +4,14 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { ChevronLeft, Edit3, Plus, Save, Trash2, X } from 'lucide-react';
+import { ChevronLeft, Plus, Trash2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CourseForm } from '@/components/artum/CourseForm';
-import { type Lesson, formatDuration } from '@/lib/mock/courses';
+import { SortableLessonList } from '@/components/artum/SortableLessonList';
+import { type Lesson } from '@/lib/mock/courses';
 import { getAllCoursesEffective, useArtumStore } from '@/lib/store';
 
 type EditMode = 'meta' | 'modules';
@@ -25,8 +26,6 @@ export default function AdminEditCoursePage() {
   const state = useArtumStore();
   const updateCourse = useArtumStore((s) => s.updateCourse);
   const addLesson = useArtumStore((s) => s.addLesson);
-  const updateLesson = useArtumStore((s) => s.updateLesson);
-  const deleteLesson = useArtumStore((s) => s.deleteLesson);
 
   const allCourses = useMemo(() => getAllCoursesEffective(state), [state]);
   const course = useMemo(
@@ -36,10 +35,6 @@ export default function AdminEditCoursePage() {
 
   const [mode, setMode] = useState<EditMode>('meta');
   const [newModuleTitle, setNewModuleTitle] = useState('');
-  const [editingLesson, setEditingLesson] = useState<{
-    moduleId: string;
-    lessonId: string;
-  } | null>(null);
 
   if (!course) {
     return (
@@ -162,69 +157,21 @@ export default function AdminEditCoursePage() {
                   </Button>
                 </div>
 
-                <ul className="divide-y divide-border">
-                  {m.lessons.map((l, lIdx) => {
-                    const isEditing =
-                      editingLesson?.moduleId === m.id && editingLesson?.lessonId === l.id;
-                    return (
-                      <li key={l.id} className="flex items-center gap-3 p-4">
-                        <span className="font-mono text-xs text-muted-foreground">
-                          {mIdx + 1}.{lIdx + 1}
-                        </span>
-                        {isEditing ? (
-                          <LessonInlineEditor
-                            lesson={l}
-                            onSave={(patch) => {
-                              updateLesson(course.slug, m.id, l.id, patch);
-                              setEditingLesson(null);
-                              toast.success('Урок обновлён');
-                            }}
-                            onCancel={() => setEditingLesson(null)}
-                          />
-                        ) : (
-                          <>
-                            <div className="flex-1">
-                              <div className="text-sm font-medium">{l.title}</div>
-                              <div className="text-xs text-muted-foreground">
-                                {formatDuration(l.durationSec)}
-                                {l.preview ? ' · превью' : ''}
-                              </div>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setEditingLesson({ moduleId: m.id, lessonId: l.id })}
-                            >
-                              <Edit3 className="size-4" aria-hidden />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                if (confirm('Удалить урок?')) {
-                                  deleteLesson(course.slug, m.id, l.id);
-                                  toast.success('Урок удалён');
-                                }
-                              }}
-                            >
-                              <Trash2 className="size-4 text-destructive" aria-hidden />
-                            </Button>
-                          </>
-                        )}
-                      </li>
-                    );
-                  })}
-                  <li className="p-3">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => addLessonToModule(m.id)}
-                      className="text-primary"
-                    >
-                      <Plus className="mr-1 size-4" aria-hidden /> Добавить урок
-                    </Button>
-                  </li>
-                </ul>
+                <SortableLessonList
+                  courseSlug={course.slug}
+                  moduleId={m.id}
+                  lessons={m.lessons}
+                />
+                <div className="border-t border-border p-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => addLessonToModule(m.id)}
+                    className="text-primary"
+                  >
+                    <Plus className="mr-1 size-4" aria-hidden /> Добавить урок
+                  </Button>
+                </div>
               </div>
             ))
           )}
@@ -249,59 +196,3 @@ export default function AdminEditCoursePage() {
   );
 }
 
-function LessonInlineEditor({
-  lesson,
-  onSave,
-  onCancel,
-}: {
-  lesson: Lesson;
-  onSave: (patch: Partial<Lesson>) => void;
-  onCancel: () => void;
-}) {
-  const [title, setTitle] = useState(lesson.title);
-  const [minutes, setMinutes] = useState(String(Math.round(lesson.durationSec / 60)));
-  const [preview, setPreview] = useState(lesson.preview);
-
-  return (
-    <div className="flex flex-1 flex-wrap items-end gap-2">
-      <Input
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        className="flex-1 min-w-[16rem]"
-        placeholder="Название урока"
-      />
-      <Input
-        type="number"
-        min={1}
-        value={minutes}
-        onChange={(e) => setMinutes(e.target.value)}
-        className="w-24"
-        placeholder="мин"
-      />
-      <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <input
-          type="checkbox"
-          checked={preview}
-          onChange={(e) => setPreview(e.target.checked)}
-        />
-        превью
-      </label>
-      <Button
-        size="sm"
-        onClick={() => {
-          const m = parseInt(minutes, 10);
-          onSave({
-            title: title.trim(),
-            durationSec: Math.max(60, isNaN(m) ? lesson.durationSec : m * 60),
-            preview,
-          });
-        }}
-      >
-        <Save className="size-4" aria-hidden />
-      </Button>
-      <Button size="sm" variant="ghost" onClick={onCancel}>
-        <X className="size-4" aria-hidden />
-      </Button>
-    </div>
-  );
-}
