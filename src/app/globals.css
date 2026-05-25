@@ -2,50 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Artum Academy — design tokens из ТЗ §2.
+ * Тёмная тема по умолчанию (нет светлого варианта на этапе скелета).
+ *
+ * HEX → HSL преобразования зафиксированы в комментариях для аудита:
+ *   #0D0D0F  → 240 8%  5%    (основной фон страниц)
+ *   #1A1A1F  → 240 9%  11%   (карточки / поверхности)
+ *   #2A2A30  → 240 9%  18%   (бордеры / разделители)
+ *   #A855F7  → 271 91% 65%   (фиолетовый акцент)
+ *   #FFFFFF  → 0   0%  100%  (основной текст)
+ *   #9CA3AF  → 220 9%  65%   (второстепенный текст)
+ */
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
-    --radius: 0.5rem;
-  }
+    /* Базовая палитра (используется shadcn-примитивами) */
+    --background: 240 8% 5%;
+    --foreground: 0 0% 100%;
 
-  .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --card: 240 9% 11%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 240 9% 11%;
+    --popover-foreground: 0 0% 100%;
+
+    /* Акцент — фиолетовый Artum */
+    --primary: 271 91% 65%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 9% 14%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 240 9% 14%;
+    --muted-foreground: 220 9% 65%;
+
+    --accent: 271 91% 65%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 9% 18%;
+    --input: 240 9% 18%;
+    --ring: 271 91% 65%;
+
+    --radius: 0.75rem;
+
+    /* Цветные теги категорий (ТЗ §2 таблица 2) */
+    --tag-ai: 271 91% 65%;          /* #A855F7 */
+    --tag-photo: 158 64% 52%;       /* #34D399 */
+    --tag-video: 43 96% 56%;        /* #FBBF24 */
+    --tag-editing: 21 90% 53%;      /* #F97316 */
+    --tag-design: 217 91% 60%;      /* #3B82F6 */
+    --tag-visual: 330 81% 60%;      /* #EC4899 */
+    --tag-copy: 173 80% 40%;        /* #14B8A6 */
   }
 }
 
@@ -53,7 +64,31 @@
   * {
     @apply border-border;
   }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+    /* Тёмная тема — единственный режим на этапе скелета */
+    color-scheme: dark;
+  }
+
+  /* Чтобы кастомные стили перекрывали базовый шрифт shadcn */
+  html {
+    font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont,
+      'Segoe UI', Roboto, sans-serif;
+  }
+
+  /* Плавная подсветка фокуса для всего интерактивного */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+}
+
+@layer components {
+  /* Карточка курса с фиолетовой подсветкой при hover (ТЗ §4.2) */
+  .course-card-hover {
+    @apply transition-all duration-200;
+  }
+  .course-card-hover:hover {
+    @apply ring-2 ring-primary/60 ring-offset-2 ring-offset-background -translate-y-0.5;
   }
 }

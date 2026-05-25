@@ -48,6 +48,16 @@ const config: Config = {
   			card: {
   				DEFAULT: 'hsl(var(--card))',
   				foreground: 'hsl(var(--card-foreground))'
+  			},
+  			/* Цветные теги категорий Artum (ТЗ §2 таблица 2) */
+  			tag: {
+  				ai: 'hsl(var(--tag-ai))',
+  				photo: 'hsl(var(--tag-photo))',
+  				video: 'hsl(var(--tag-video))',
+  				editing: 'hsl(var(--tag-editing))',
+  				design: 'hsl(var(--tag-design))',
+  				visual: 'hsl(var(--tag-visual))',
+  				copy: 'hsl(var(--tag-copy))'
   			}
   		},
   		borderRadius: {
