@@ -37,9 +37,9 @@ function findLessonContext(
   if (!course) return null;
 
   const flat: Array<{ module: Module; lesson: Lesson }> = [];
-  for (const module of course.modules) {
-    for (const lesson of module.lessons) {
-      flat.push({ module, lesson });
+  for (const mod of course.modules) {
+    for (const lesson of mod.lessons) {
+      flat.push({ module: mod, lesson });
     }
   }
   const total = flat.length;

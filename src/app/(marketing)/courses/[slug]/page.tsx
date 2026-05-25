@@ -150,55 +150,65 @@ export default function CoursePage({ params }: CoursePageProps) {
                     {module.lessons.map((lesson, lessonIdx) => {
                       const canOpen = course.purchased || lesson.preview;
                       const lessonNumber = `${moduleIdx + 1}.${lessonIdx + 1}`;
+                      const rowClasses = cn(
+                        'flex items-center gap-4 p-4 transition-colors',
+                        canOpen
+                          ? 'hover:bg-secondary'
+                          : 'cursor-not-allowed opacity-60',
+                      );
+                      const Inner = (
+                        <>
+                          {/* Status indicator */}
+                          <span className="shrink-0">
+                            {lesson.completed ? (
+                              <span className="inline-flex size-8 items-center justify-center rounded-full bg-primary/20 text-primary">
+                                <Check className="size-4" aria-hidden />
+                              </span>
+                            ) : canOpen ? (
+                              <span className="inline-flex size-8 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+                                <Play className="size-3.5" aria-hidden fill="currentColor" />
+                              </span>
+                            ) : (
+                              <span className="inline-flex size-8 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+                                <Lock className="size-3.5" aria-hidden />
+                              </span>
+                            )}
+                          </span>
+                          {/* Title + number */}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="font-mono text-xs text-muted-foreground">
+                                {lessonNumber}
+                              </span>
+                              <span className="truncate font-medium text-foreground">
+                                {lesson.title}
+                              </span>
+                              {lesson.preview && !course.purchased ? (
+                                <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs text-primary">
+                                  Превью
+                                </span>
+                              ) : null}
+                            </div>
+                          </div>
+                          <span className="shrink-0 text-xs text-muted-foreground">
+                            {formatDuration(lesson.durationSec)}
+                          </span>
+                        </>
+                      );
                       return (
                         <li key={lesson.id}>
-                          <Link
-                            href={canOpen ? `/learn/${course.slug}/${lesson.id}` : '#'}
-                            aria-disabled={!canOpen}
-                            onClick={(e) => !canOpen && e.preventDefault()}
-                            className={cn(
-                              'flex items-center gap-4 p-4 transition-colors',
-                              canOpen
-                                ? 'hover:bg-secondary'
-                                : 'cursor-not-allowed opacity-60',
-                            )}
-                          >
-                            {/* Status indicator */}
-                            <span className="shrink-0">
-                              {lesson.completed ? (
-                                <span className="inline-flex size-8 items-center justify-center rounded-full bg-primary/20 text-primary">
-                                  <Check className="size-4" aria-hidden />
-                                </span>
-                              ) : canOpen ? (
-                                <span className="inline-flex size-8 items-center justify-center rounded-full bg-secondary text-muted-foreground">
-                                  <Play className="size-3.5" aria-hidden fill="currentColor" />
-                                </span>
-                              ) : (
-                                <span className="inline-flex size-8 items-center justify-center rounded-full bg-secondary text-muted-foreground">
-                                  <Lock className="size-3.5" aria-hidden />
-                                </span>
-                              )}
-                            </span>
-                            {/* Title + number */}
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2 text-sm">
-                                <span className="font-mono text-xs text-muted-foreground">
-                                  {lessonNumber}
-                                </span>
-                                <span className="truncate font-medium text-foreground">
-                                  {lesson.title}
-                                </span>
-                                {lesson.preview && !course.purchased ? (
-                                  <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs text-primary">
-                                    Превью
-                                  </span>
-                                ) : null}
-                              </div>
+                          {canOpen ? (
+                            <Link
+                              href={`/learn/${course.slug}/${lesson.id}`}
+                              className={rowClasses}
+                            >
+                              {Inner}
+                            </Link>
+                          ) : (
+                            <div className={rowClasses} aria-disabled="true">
+                              {Inner}
                             </div>
-                            <span className="shrink-0 text-xs text-muted-foreground">
-                              {formatDuration(lesson.durationSec)}
-                            </span>
-                          </Link>
+                          )}
                         </li>
                       );
                     })}

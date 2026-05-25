@@ -93,10 +93,19 @@ export interface Course {
   certificateIssued: boolean;
 }
 
-/** Помощник для генерации mock-уроков */
-function lessons(items: Array<[string, number, boolean?]>, completedCount = 0): Lesson[] {
+/**
+ * Помощник для генерации mock-уроков.
+ * Lesson ID — latin-only (`lesson-{moduleSlug}-{idx}`) чтобы корректно
+ * проходить через Next.js dynamic route без percent-encoding кириллицы.
+ * Реальные ID будут UUID на этапе 3 ТЗ.
+ */
+function lessons(
+  moduleSlug: string,
+  items: Array<[string, number, boolean?]>,
+  completedCount = 0,
+): Lesson[] {
   return items.map(([title, durationSec, preview], idx) => ({
-    id: `lesson-${title.toLowerCase().replace(/[^a-zа-я0-9]/gi, '-').slice(0, 40)}-${idx}`,
+    id: `lesson-${moduleSlug}-${idx + 1}`,
     title,
     durationSec,
     completed: idx < completedCount,
@@ -122,7 +131,7 @@ export const COURSES: Course[] = [
         id: 'mod-mj-1',
         title: 'Введение в Midjourney',
         description: 'Установка, аккаунт Discord, первые команды',
-        lessons: lessons(
+        lessons: lessons('mod-mj-1', 
           [
             ['Что такое Midjourney и для чего он нужен', 720, true],
             ['Регистрация и подключение к Discord', 480],
@@ -135,7 +144,7 @@ export const COURSES: Course[] = [
         id: 'mod-mj-2',
         title: 'Промпт-инжиниринг',
         description: 'Структура запросов, параметры, стили',
-        lessons: lessons(
+        lessons: lessons('mod-mj-2', 
           [
             ['Анатомия эффективного промпта', 1080],
             ['Параметры --ar, --stylize, --chaos', 960],
@@ -166,7 +175,7 @@ export const COURSES: Course[] = [
         id: 'mod-cgpt-1',
         title: 'Основы работы с ChatGPT',
         description: 'Интерфейс, лимиты, базовые приёмы',
-        lessons: lessons(
+        lessons: lessons('mod-cgpt-1', 
           [
             ['Введение и принципы LLM', 660, true],
             ['Структура хорошего промпта', 840],
@@ -198,7 +207,7 @@ export const COURSES: Course[] = [
         id: 'mod-mp-1',
         title: 'Основы композиции',
         description: 'Правило третей, направляющие линии, ритм',
-        lessons: lessons(
+        lessons: lessons('mod-mp-1', 
           [
             ['Правило третей и золотое сечение', 780, true],
             ['Направляющие линии и перспектива', 660],
@@ -211,7 +220,7 @@ export const COURSES: Course[] = [
         id: 'mod-mp-2',
         title: 'Свет в кадре',
         description: 'Естественный свет, золотой час, силуэты',
-        lessons: lessons(
+        lessons: lessons('mod-mp-2', 
           [
             ['Жёсткий и мягкий свет', 720],
             ['Золотой час и синий час', 900],
@@ -241,7 +250,7 @@ export const COURSES: Course[] = [
         id: 'mod-lr-1',
         title: 'Интерфейс и базовая коррекция',
         description: 'Знакомство, экспозиция, баланс белого',
-        lessons: lessons([['Установка и интерфейс', 600, true], ['Экспозиция и контраст', 720]], 2),
+        lessons: lessons('mod-lr-1', [['Установка и интерфейс', 600, true], ['Экспозиция и контраст', 720]], 2),
       },
     ],
     purchased: true,
@@ -266,7 +275,7 @@ export const COURSES: Course[] = [
         id: 'mod-mv-1',
         title: 'Подготовка к съёмке',
         description: 'Сценарий, раскадровка, оборудование',
-        lessons: lessons(
+        lessons: lessons('mod-mv-1', 
           [
             ['Идея и сценарий', 540, true],
             ['Раскадровка', 660],
@@ -298,7 +307,7 @@ export const COURSES: Course[] = [
         id: 'mod-dv-1',
         title: 'Введение в DaVinci Resolve',
         description: 'Установка, интерфейс, первый проект',
-        lessons: lessons(
+        lessons: lessons('mod-dv-1', 
           [
             ['Установка и системные требования', 540, true],
             ['Обзор интерфейса: Media / Edit / Color', 780],
@@ -311,7 +320,7 @@ export const COURSES: Course[] = [
         id: 'mod-dv-2',
         title: 'Базовый монтаж',
         description: 'Резка, склейка, транзишены, синхронизация',
-        lessons: lessons(
+        lessons: lessons('mod-dv-2', 
           [
             ['Резка и склейка клипов', 900],
             ['Базовые транзишены', 720],
@@ -343,7 +352,7 @@ export const COURSES: Course[] = [
         id: 'mod-fig-1',
         title: 'Введение в Figma',
         description: 'Установка, интерфейс, базовая навигация',
-        lessons: lessons(
+        lessons: lessons('mod-fig-1', 
           [
             ['Зачем Figma и кому она нужна', 480, true],
             ['Установка и интерфейс', 600],
@@ -374,7 +383,7 @@ export const COURSES: Course[] = [
         id: 'mod-vis-1',
         title: 'Цвет и типографика',
         description: 'Палитра, шрифты, контраст',
-        lessons: lessons([['Цветовая палитра бренда', 660, true]], 0),
+        lessons: lessons('mod-vis-1', [['Цветовая палитра бренда', 660, true]], 0),
       },
     ],
     purchased: false,
@@ -399,7 +408,7 @@ export const COURSES: Course[] = [
         id: 'mod-cp-1',
         title: 'Основы',
         description: 'Структуры текстов, hooks, CTA',
-        lessons: lessons([['Зачем структура и hooks', 480, true]], 0),
+        lessons: lessons('mod-cp-1', [['Зачем структура и hooks', 480, true]], 0),
       },
     ],
     purchased: false,
@@ -459,10 +468,10 @@ export function getCourseLessonsCount(course: Course): number {
 export function getNextLesson(course: Course): { module: Module; lesson: Lesson; lessonIndex: number; total: number } | null {
   let absoluteIndex = 0;
   const total = getCourseLessonsCount(course);
-  for (const module of course.modules) {
-    for (const lesson of module.lessons) {
+  for (const mod of course.modules) {
+    for (const lesson of mod.lessons) {
       if (!lesson.completed) {
-        return { module, lesson, lessonIndex: absoluteIndex, total };
+        return { module: mod, lesson, lessonIndex: absoluteIndex, total };
       }
       absoluteIndex += 1;
     }
