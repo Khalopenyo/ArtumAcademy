@@ -18,8 +18,8 @@ interface LogoProps {
 export function Logo({ className, asSpan = false }: LogoProps) {
   const content = (
     <>
-      <span className="font-extrabold tracking-tight text-foreground">ARTUM</span>
-      <span className="ml-1 font-medium tracking-wide text-primary/80">Academy</span>
+      <span className="font-bold tracking-[0.08em] text-primary">ARTUM</span>
+      <span className="ml-1 font-normal tracking-wide text-muted-foreground">Academy</span>
     </>
   );
 

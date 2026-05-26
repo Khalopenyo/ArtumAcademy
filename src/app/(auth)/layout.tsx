@@ -1,29 +1,30 @@
 import Link from 'next/link';
+import { ChevronLeft } from 'lucide-react';
 
 import { Logo } from '@/components/shared/Logo';
 
 /**
- * Auth route-group layout — минимальная chrome для /login, /register, /forgot-password.
- *
- * Дизайн: только лого + центрированная карточка формы. Это снижает отвлечение
- * на этапе конверсии (стандартный паттерн EdTech: KF Academy, Skillbox имеют
- * аналогичный авторизационный flow).
+ * Auth route-group layout — космическая тема Artum.
+ * Минимальная chrome: лого + ссылка на главную. Центрированная карточка
+ * для login/register/forgot-password/reset-password. Звёздный фон
+ * приходит из root layout (<CosmicBackground />).
  */
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <header className="border-b border-border bg-background/95 backdrop-blur">
-        <div className="container mx-auto flex h-16 items-center justify-between">
-          <Logo className="text-xl" />
+    <div className="flex min-h-screen flex-col text-foreground">
+      <header className="border-b border-border/30 bg-[#0A0618]/50 backdrop-blur-xl">
+        <div className="container mx-auto flex h-16 items-center justify-between px-4">
+          <Logo className="text-[17px]" />
           <Link
             href="/"
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
           >
+            <ChevronLeft className="size-3.5" aria-hidden />
             На главную
           </Link>
         </div>
       </header>
-      <main className="container mx-auto flex flex-1 items-center justify-center py-8">
+      <main className="container mx-auto flex flex-1 items-center justify-center px-4 py-10">
         <div className="w-full max-w-md">{children}</div>
       </main>
     </div>

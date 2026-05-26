@@ -1,5 +1,3 @@
-import { Award, BookOpen, Clock, TrendingUp } from 'lucide-react';
-
 import type { UserStats } from '@/lib/mock/courses';
 import { cn } from '@/lib/utils';
 
@@ -9,47 +7,35 @@ interface UserStatsBlockProps {
 }
 
 /**
- * Блок статистики пользователя на дашборде (ТЗ §4.1):
- *   активные курсы · сертификаты · время обучения · общий прогресс
+ * Блок статистики пользователя — нижняя полоска со светящимся фиолетовым
+ * градиентом. 4 значения подряд: активные курсы, сертификаты, время обучения,
+ * общий прогресс. Дизайн по макету (stats-bar внизу страницы).
  */
 export function UserStatsBlock({ stats, className }: UserStatsBlockProps) {
   const items = [
-    {
-      label: 'Активные курсы',
-      value: String(stats.activeCourses),
-      icon: BookOpen,
-    },
-    {
-      label: 'Сертификаты',
-      value: String(stats.certificates),
-      icon: Award,
-    },
-    {
-      label: 'Время обучения',
-      value: `${stats.studyHoursTotal} ч`,
-      icon: Clock,
-    },
-    {
-      label: 'Общий прогресс',
-      value: `${stats.overallProgressPercent}%`,
-      icon: TrendingUp,
-    },
+    { label: 'Активных курса', value: String(stats.activeCourses) },
+    { label: 'Сертификат', value: String(stats.certificates) },
+    { label: 'Время обучения', value: `${stats.studyHoursTotal} ч` },
+    { label: 'Общий прогресс', value: `${stats.overallProgressPercent}%` },
   ];
 
   return (
     <div
       className={cn(
-        'grid grid-cols-2 gap-3 rounded-2xl border border-border bg-card p-4 sm:grid-cols-4 sm:gap-4 sm:p-6',
+        'grid grid-cols-2 gap-4 rounded-2xl border border-primary/12 p-5 sm:grid-cols-4 sm:p-6',
         className,
       )}
+      style={{
+        background:
+          'linear-gradient(135deg, rgba(30, 18, 53, 0.6), rgba(45, 27, 82, 0.3), rgba(13, 13, 15, 0.85))',
+      }}
     >
       {items.map((item) => (
-        <div key={item.label} className="flex flex-col gap-2 rounded-xl bg-background/50 p-4">
-          <div className="inline-flex size-10 items-center justify-center rounded-lg bg-primary/15 text-primary">
-            <item.icon className="size-5" aria-hidden />
+        <div key={item.label} className="text-center">
+          <div className="bg-gradient-to-br from-white to-[#E8DEFF] bg-clip-text text-2xl font-bold leading-none text-transparent sm:text-3xl">
+            {item.value}
           </div>
-          <div className="text-2xl font-semibold leading-none text-foreground">{item.value}</div>
-          <div className="text-xs text-muted-foreground">{item.label}</div>
+          <div className="mt-1.5 text-[11px] text-muted-foreground">{item.label}</div>
         </div>
       ))}
     </div>
