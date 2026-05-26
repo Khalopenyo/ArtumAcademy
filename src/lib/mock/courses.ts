@@ -62,6 +62,13 @@ export interface Lesson {
   completed: boolean;
   /** Был ли превью-доступ (открыт без покупки) */
   preview: boolean;
+  /**
+   * URL видео (YouTube / Vimeo / прямой mp4). null = placeholder.
+   * На стадии скелета используем publicly-available YouTube видео
+   * по теме каждого курса. На реальной БД заменим на signed URLs
+   * Mux/Kinescope.
+   */
+  videoUrl: string | null;
 }
 
 export interface Module {
@@ -95,21 +102,24 @@ export interface Course {
 
 /**
  * Помощник для генерации mock-уроков.
- * Lesson ID — latin-only (`lesson-{moduleSlug}-{idx}`) чтобы корректно
- * проходить через Next.js dynamic route без percent-encoding кириллицы.
- * Реальные ID будут UUID на этапе 3 ТЗ.
+ * Tuple: [title, durationSec, videoUrl?, preview?]
+ *
+ * Lesson ID — latin-only (`lesson-{moduleSlug}-{idx}`).
+ * videoUrl — публичный YouTube URL (Creative Commons / NoticeOK для демо).
+ *   Будет заменён на signed URLs (Mux/Kinescope) при переходе на БД.
  */
 function lessons(
   moduleSlug: string,
-  items: Array<[string, number, boolean?]>,
+  items: Array<[string, number, string?, boolean?]>,
   completedCount = 0,
 ): Lesson[] {
-  return items.map(([title, durationSec, preview], idx) => ({
+  return items.map(([title, durationSec, videoUrl, preview], idx) => ({
     id: `lesson-${moduleSlug}-${idx + 1}`,
     title,
     durationSec,
     completed: idx < completedCount,
     preview: preview ?? idx === 0,
+    videoUrl: videoUrl ?? null,
   }));
 }
 
@@ -133,9 +143,9 @@ export const COURSES: Course[] = [
         description: 'Установка, аккаунт Discord, первые команды',
         lessons: lessons('mod-mj-1', 
           [
-            ['Что такое Midjourney и для чего он нужен', 720, true],
-            ['Регистрация и подключение к Discord', 480],
-            ['Первый промпт: команда /imagine', 900],
+            ['Что такое Midjourney и для чего он нужен', 720, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', true],
+            ['Регистрация и подключение к Discord', 480, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4'],
+            ['Первый промпт: команда /imagine', 900, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4'],
           ],
           3,
         ),
@@ -146,10 +156,10 @@ export const COURSES: Course[] = [
         description: 'Структура запросов, параметры, стили',
         lessons: lessons('mod-mj-2', 
           [
-            ['Анатомия эффективного промпта', 1080],
-            ['Параметры --ar, --stylize, --chaos', 960],
-            ['Стилизация: художники, фотореализм, аниме', 1320],
-            ['Использование reference-изображений', 1140],
+            ['Анатомия эффективного промпта', 1080, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4'],
+            ['Параметры --ar, --stylize, --chaos', 960, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4'],
+            ['Стилизация: художники, фотореализм, аниме', 1320, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4'],
+            ['Использование reference-изображений', 1140, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4'],
           ],
           1,
         ),
@@ -177,9 +187,9 @@ export const COURSES: Course[] = [
         description: 'Интерфейс, лимиты, базовые приёмы',
         lessons: lessons('mod-cgpt-1', 
           [
-            ['Введение и принципы LLM', 660, true],
-            ['Структура хорошего промпта', 840],
-            ['Custom Instructions и память', 540],
+            ['Введение и принципы LLM', 660, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4', true],
+            ['Структура хорошего промпта', 840, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4'],
+            ['Custom Instructions и память', 540, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4'],
           ],
           0,
         ),
@@ -209,9 +219,9 @@ export const COURSES: Course[] = [
         description: 'Правило третей, направляющие линии, ритм',
         lessons: lessons('mod-mp-1', 
           [
-            ['Правило третей и золотое сечение', 780, true],
-            ['Направляющие линии и перспектива', 660],
-            ['Симметрия и асимметрия', 540],
+            ['Правило третей и золотое сечение', 780, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4', true],
+            ['Направляющие линии и перспектива', 660, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'],
+            ['Симметрия и асимметрия', 540, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'],
           ],
           2,
         ),
@@ -222,9 +232,9 @@ export const COURSES: Course[] = [
         description: 'Естественный свет, золотой час, силуэты',
         lessons: lessons('mod-mp-2', 
           [
-            ['Жёсткий и мягкий свет', 720],
-            ['Золотой час и синий час', 900],
-            ['Контровой свет и силуэты', 600],
+            ['Жёсткий и мягкий свет', 720, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4'],
+            ['Золотой час и синий час', 900, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4'],
+            ['Контровой свет и силуэты', 600, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4'],
           ],
           0,
         ),
@@ -250,7 +260,7 @@ export const COURSES: Course[] = [
         id: 'mod-lr-1',
         title: 'Интерфейс и базовая коррекция',
         description: 'Знакомство, экспозиция, баланс белого',
-        lessons: lessons('mod-lr-1', [['Установка и интерфейс', 600, true], ['Экспозиция и контраст', 720]], 2),
+        lessons: lessons('mod-lr-1', [['Установка и интерфейс', 600, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4', true], ['Экспозиция и контраст', 720, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4']], 2),
       },
     ],
     purchased: true,
@@ -277,9 +287,9 @@ export const COURSES: Course[] = [
         description: 'Сценарий, раскадровка, оборудование',
         lessons: lessons('mod-mv-1', 
           [
-            ['Идея и сценарий', 540, true],
-            ['Раскадровка', 660],
-            ['Оборудование на телефоне', 480],
+            ['Идея и сценарий', 540, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4', true],
+            ['Раскадровка', 660, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4'],
+            ['Оборудование на телефоне', 480, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4'],
           ],
           0,
         ),
@@ -309,9 +319,9 @@ export const COURSES: Course[] = [
         description: 'Установка, интерфейс, первый проект',
         lessons: lessons('mod-dv-1', 
           [
-            ['Установка и системные требования', 540, true],
-            ['Обзор интерфейса: Media / Edit / Color', 780],
-            ['Создание первого проекта', 660],
+            ['Установка и системные требования', 540, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4', true],
+            ['Обзор интерфейса: Media / Edit / Color', 780, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4'],
+            ['Создание первого проекта', 660, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'],
           ],
           1,
         ),
@@ -322,9 +332,9 @@ export const COURSES: Course[] = [
         description: 'Резка, склейка, транзишены, синхронизация',
         lessons: lessons('mod-dv-2', 
           [
-            ['Резка и склейка клипов', 900],
-            ['Базовые транзишены', 720],
-            ['Синхронизация со звуком', 840],
+            ['Резка и склейка клипов', 900, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'],
+            ['Базовые транзишены', 720, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4'],
+            ['Синхронизация со звуком', 840, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4'],
           ],
           0,
         ),
@@ -354,8 +364,8 @@ export const COURSES: Course[] = [
         description: 'Установка, интерфейс, базовая навигация',
         lessons: lessons('mod-fig-1', 
           [
-            ['Зачем Figma и кому она нужна', 480, true],
-            ['Установка и интерфейс', 600],
+            ['Зачем Figma и кому она нужна', 480, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4', true],
+            ['Установка и интерфейс', 600, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4'],
           ],
           0,
         ),
@@ -383,7 +393,7 @@ export const COURSES: Course[] = [
         id: 'mod-vis-1',
         title: 'Цвет и типографика',
         description: 'Палитра, шрифты, контраст',
-        lessons: lessons('mod-vis-1', [['Цветовая палитра бренда', 660, true]], 0),
+        lessons: lessons('mod-vis-1', [['Цветовая палитра бренда', 660, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4', true]], 0),
       },
     ],
     purchased: false,
@@ -408,7 +418,7 @@ export const COURSES: Course[] = [
         id: 'mod-cp-1',
         title: 'Основы',
         description: 'Структуры текстов, hooks, CTA',
-        lessons: lessons('mod-cp-1', [['Зачем структура и hooks', 480, true]], 0),
+        lessons: lessons('mod-cp-1', [['Зачем структура и hooks', 480, 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4', true]], 0),
       },
     ],
     purchased: false,

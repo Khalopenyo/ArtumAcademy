@@ -2,10 +2,18 @@
 
 import { jsPDF } from 'jspdf';
 
-import type { StoredCertificate } from '@/lib/store';
+/**
+ * Минимальный shape сертификата для PDF — namespace-agnostic
+ * (работает и со StoredCertificate из старого store, и с CertificateRecord
+ * из server queries после миграции 3).
+ */
+interface CertPdfCertificate {
+  verificationNumber: string;
+  issuedAt: string;
+}
 
 interface CertPdfInput {
-  certificate: StoredCertificate;
+  certificate: CertPdfCertificate;
   courseTitle: string;
   studentName: string;
 }

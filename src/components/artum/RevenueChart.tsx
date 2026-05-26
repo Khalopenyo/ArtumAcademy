@@ -1,10 +1,19 @@
 'use client';
 
 import { useMemo } from 'react';
-import type { StoredPayment } from '@/lib/store';
+
+/**
+ * Минимальный shape платежа для chart'а — namespace-agnostic.
+ * Работает и со StoredPayment (mock), и с server PaymentRecord.
+ */
+interface ChartPayment {
+  status: 'succeeded' | 'refunded';
+  paidAt: string;
+  amountMinor: number;
+}
 
 interface RevenueChartProps {
-  payments: StoredPayment[];
+  payments: ChartPayment[];
   /** Сколько месяцев показывать (по умолчанию 6) */
   months?: number;
 }
@@ -38,7 +47,7 @@ export function RevenueChart({ payments, months = 6 }: RevenueChartProps) {
   const totalSum = buckets.reduce((s, b) => s + b.total, 0);
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+    <div className="rounded-2xl border border-border/60 bg-card/60 p-5 backdrop-blur-xl sm:p-6">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
           <div className="text-xs uppercase tracking-wider text-muted-foreground">
