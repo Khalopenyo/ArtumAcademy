@@ -1,22 +1,29 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Settings, ShieldCheck } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { type StoredUser, useArtumStore } from '@/lib/store';
+import { updatePasswordAction, updateProfileAction } from '@/server/actions/auth';
+import type { AuthUser } from '@/server/queries/auth';
 
 interface ProfileSettingsProps {
-  user: StoredUser;
+  user: AuthUser;
 }
 
 /**
  * Реальное редактирование профиля: имя, email, пароль.
- * Mock-режим: пишет в Zustand store + localStorage. На стадии БД
- * заменится на Supabase Auth update calls.
+ * Использует Supabase Auth Server Actions:
+ *   - имя/email → updateProfileAction (пишет в profiles + auth.users)
+ *   - пароль → updatePasswordAction (Supabase signed-in session уже верифицирована;
+ *     поэтому current password не запрашиваем — это стандартный паттерн @supabase)
+ *
+ * После успешного апдейта вызываем router.refresh() чтобы Server Components
+ * (Header) перетянули новый user.
  */
 export function ProfileSettings({ user }: ProfileSettingsProps) {
   return (
@@ -24,16 +31,16 @@ export function ProfileSettings({ user }: ProfileSettingsProps) {
       <CredentialsCard user={user} />
       <ProfileCard user={user} />
       <p className="text-xs text-muted-foreground">
-        Сейчас все изменения сохраняются локально. На следующей стадии
-        переедут на Supabase Auth + Postgres.
+        Изменения сохраняются в Supabase. При смене email Supabase отправит
+        письмо подтверждения на новый адрес (когда SMTP будет настроен).
       </p>
     </div>
   );
 }
 
-function CredentialsCard({ user }: { user: StoredUser }) {
+function CredentialsCard({ user }: { user: AuthUser }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card">
+    <div className="overflow-hidden rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xl">
       <div className="flex items-start gap-3 border-b border-border p-5">
         <div className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
           <ShieldCheck className="size-5" aria-hidden />
@@ -53,9 +60,9 @@ function CredentialsCard({ user }: { user: StoredUser }) {
   );
 }
 
-function ProfileCard({ user }: { user: StoredUser }) {
+function ProfileCard({ user }: { user: AuthUser }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card">
+    <div className="overflow-hidden rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xl">
       <div className="flex items-start gap-3 border-b border-border p-5">
         <div className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
           <Settings className="size-5" aria-hidden />
@@ -74,21 +81,22 @@ function ProfileCard({ user }: { user: StoredUser }) {
   );
 }
 
-function NameRow({ user }: { user: StoredUser }) {
-  const updateProfile = useArtumStore((s) => s.updateProfile);
+function NameRow({ user }: { user: AuthUser }) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(user.name);
 
   function save() {
-    startTransition(() => {
-      const res = updateProfile({ name });
+    startTransition(async () => {
+      const res = await updateProfileAction({ name });
       if (!res.ok) {
         toast.error(res.error);
         return;
       }
       toast.success('Имя обновлено');
       setEditing(false);
+      router.refresh();
     });
   }
 
@@ -135,21 +143,22 @@ function NameRow({ user }: { user: StoredUser }) {
   );
 }
 
-function EmailRow({ user }: { user: StoredUser }) {
-  const updateProfile = useArtumStore((s) => s.updateProfile);
+function EmailRow({ user }: { user: AuthUser }) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [editing, setEditing] = useState(false);
   const [email, setEmail] = useState(user.email);
 
   function save() {
-    startTransition(() => {
-      const res = updateProfile({ email });
+    startTransition(async () => {
+      const res = await updateProfileAction({ email });
       if (!res.ok) {
         toast.error(res.error);
         return;
       }
-      toast.success('Email обновлён');
+      toast.success('Email обновлён. Проверьте почту для подтверждения.');
       setEditing(false);
+      router.refresh();
     });
   }
 
@@ -199,10 +208,8 @@ function EmailRow({ user }: { user: StoredUser }) {
 }
 
 function PasswordRow() {
-  const changePassword = useArtumStore((s) => s.changePassword);
   const [pending, startTransition] = useTransition();
   const [editing, setEditing] = useState(false);
-  const [current, setCurrent] = useState('');
   const [next1, setNext1] = useState('');
   const [next2, setNext2] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -213,14 +220,17 @@ function PasswordRow() {
       setError('Новые пароли не совпадают');
       return;
     }
-    startTransition(() => {
-      const res = changePassword({ currentPassword: current, newPassword: next1 });
+    if (next1.length < 8) {
+      setError('Пароль минимум 8 символов');
+      return;
+    }
+    startTransition(async () => {
+      const res = await updatePasswordAction(next1);
       if (!res.ok) {
         setError(res.error);
         return;
       }
       toast.success('Пароль обновлён');
-      setCurrent('');
       setNext1('');
       setNext2('');
       setEditing(false);
@@ -233,17 +243,6 @@ function PasswordRow() {
         <div className="text-sm font-medium">Пароль</div>
         {editing ? (
           <div className="mt-2 max-w-md space-y-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="cur-pw" className="text-xs">Текущий пароль</Label>
-              <Input
-                id="cur-pw"
-                type="password"
-                autoComplete="current-password"
-                value={current}
-                onChange={(e) => setCurrent(e.target.value)}
-                disabled={pending}
-              />
-            </div>
             <div className="space-y-1.5">
               <Label htmlFor="new-pw" className="text-xs">Новый пароль</Label>
               <Input
@@ -285,7 +284,6 @@ function PasswordRow() {
               variant="ghost"
               size="sm"
               onClick={() => {
-                setCurrent('');
                 setNext1('');
                 setNext2('');
                 setError(null);
@@ -298,7 +296,7 @@ function PasswordRow() {
             <Button
               size="sm"
               onClick={save}
-              disabled={pending || !current || next1.length < 8 || next2.length < 8}
+              disabled={pending || next1.length < 8 || next2.length < 8}
             >
               {pending ? 'Сохраняем…' : 'Сменить'}
             </Button>

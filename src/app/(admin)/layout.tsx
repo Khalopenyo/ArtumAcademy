@@ -1,17 +1,18 @@
-import { AuthGate } from '@/components/shared/AuthGate';
 import { Footer } from '@/components/marketing/Footer';
 import { Header } from '@/components/marketing/Header';
+import { requireAdmin } from '@/server/queries/auth';
 
 /**
- * Admin route-group layout — auth-gated + isAdmin required.
+ * Admin route-group layout — server-side auth gate, требует profiles.is_admin=true.
+ *
+ * Не-залогиненных отправляет на /login, не-админов — на /.
  */
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  await requireAdmin();
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
+    <div className="flex min-h-screen flex-col text-foreground">
       <Header />
-      <main className="flex-1">
-        <AuthGate adminOnly>{children}</AuthGate>
-      </main>
+      <main className="flex-1">{children}</main>
       <Footer />
     </div>
   );

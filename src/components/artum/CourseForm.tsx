@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -12,7 +12,11 @@ import {
   type Course,
   CATEGORIES,
 } from '@/lib/mock/courses';
-import { useArtumStore } from '@/lib/store';
+import {
+  createCourseAction,
+  createModuleAction,
+  updateCourseAction,
+} from '@/server/actions/admin/courses';
 
 const GRADIENTS = [
   { id: 'purple', label: 'Фиолетовый', value: 'from-purple-600 via-fuchsia-500 to-pink-500' },
@@ -36,8 +40,7 @@ interface CourseFormProps {
  */
 export function CourseForm({ initial }: CourseFormProps) {
   const router = useRouter();
-  const addCourse = useArtumStore((s) => s.addCourse);
-  const updateCourse = useArtumStore((s) => s.updateCourse);
+  const [pending, startTransition] = useTransition();
 
   const editing = !!initial;
 
@@ -67,46 +70,55 @@ export function CourseForm({ initial }: CourseFormProps) {
       return;
     }
 
-    if (editing) {
-      updateCourse(initial!.slug, {
+    startTransition(async () => {
+      if (editing) {
+        const res = await updateCourseAction(initial!.slug, {
+          slug: initial!.slug,
+          title,
+          shortDescription,
+          longDescription,
+          category,
+          priceMinor,
+          coverGradient,
+        });
+        if (!res.ok) {
+          toast.error(res.error);
+          return;
+        }
+        toast.success('Курс обновлён');
+        router.push('/admin/courses');
+        router.refresh();
+        return;
+      }
+
+      // create
+      const res = await createCourseAction({
+        slug,
         title,
         shortDescription,
         longDescription,
         category,
+        studentsCount: 0,
         priceMinor,
         coverGradient,
+        published: true,
+        orderIndex: 100,
       });
-      toast.success('Курс обновлён');
-      router.push('/admin/courses');
-      return;
-    }
-
-    // create
-    const course: Course = {
-      id: `course-${slug}`,
-      slug,
-      title,
-      shortDescription,
-      longDescription,
-      category,
-      studentsCount: 0,
-      priceMinor,
-      coverGradient,
-      modules: [
-        {
-          id: `mod-${slug}-1`,
-          title: 'Модуль 1',
-          description: 'Опишите содержание модуля',
-          lessons: [],
-        },
-      ],
-      purchased: false,
-      purchasedAt: null,
-      certificateIssued: false,
-    };
-    addCourse(course);
-    toast.success('Курс создан');
-    router.push(`/admin/courses/${slug}`);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      // Создаём первый модуль (best effort, не блокируем UX)
+      await createModuleAction({
+        courseSlug: slug,
+        title: 'Модуль 1',
+        description: 'Опишите содержание модуля',
+        orderIndex: 0,
+      });
+      toast.success('Курс создан');
+      router.push(`/admin/courses/${slug}`);
+      router.refresh();
+    });
   }
 
   return (
@@ -232,10 +244,17 @@ export function CourseForm({ initial }: CourseFormProps) {
       </div>
 
       <div className="flex justify-end gap-2 border-t border-border pt-6">
-        <Button type="button" variant="outline" onClick={() => router.push('/admin/courses')}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => router.push('/admin/courses')}
+          disabled={pending}
+        >
           Отмена
         </Button>
-        <Button type="submit">{editing ? 'Сохранить' : 'Создать курс'}</Button>
+        <Button type="submit" disabled={pending}>
+          {pending ? 'Сохраняем…' : editing ? 'Сохранить' : 'Создать курс'}
+        </Button>
       </div>
     </form>
   );

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   DndContext,
   type DragEndEvent,
@@ -24,7 +25,11 @@ import { Edit3, GripVertical, Save, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { type Lesson, formatDuration } from '@/lib/mock/courses';
-import { useArtumStore } from '@/lib/store';
+import {
+  deleteLessonAction,
+  reorderLessonsAction,
+  updateLessonAction,
+} from '@/server/actions/admin/courses';
 import { cn } from '@/lib/utils';
 
 interface SortableLessonListProps {
@@ -39,12 +44,11 @@ interface SortableLessonListProps {
  */
 export function SortableLessonList({
   courseSlug,
-  moduleId,
+  moduleId: _moduleId,
   lessons,
 }: SortableLessonListProps) {
-  const reorderLessons = useArtumStore((s) => s.reorderLessons);
-  const updateLesson = useArtumStore((s) => s.updateLesson);
-  const deleteLesson = useArtumStore((s) => s.deleteLesson);
+  const router = useRouter();
+  const [, startTransition] = useTransition();
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const sensors = useSensors(
@@ -59,12 +63,18 @@ export function SortableLessonList({
     const newIdx = lessons.findIndex((l) => l.id === over.id);
     if (oldIdx === -1 || newIdx === -1) return;
     const reordered = arrayMove(lessons, oldIdx, newIdx);
-    reorderLessons(
-      courseSlug,
-      moduleId,
-      reordered.map((l) => l.id),
-    );
-    toast.success('Порядок уроков обновлён');
+    startTransition(async () => {
+      const res = await reorderLessonsAction(
+        reordered.map((l) => l.id),
+        courseSlug,
+      );
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success('Порядок уроков обновлён');
+      router.refresh();
+    });
   }
 
   return (
@@ -80,14 +90,28 @@ export function SortableLessonList({
               onEdit={() => setEditingId(lesson.id)}
               onCancel={() => setEditingId(null)}
               onSave={(patch) => {
-                updateLesson(courseSlug, moduleId, lesson.id, patch);
-                setEditingId(null);
-                toast.success('Урок обновлён');
+                startTransition(async () => {
+                  const res = await updateLessonAction(lesson.id, patch, courseSlug);
+                  if (!res.ok) {
+                    toast.error(res.error);
+                    return;
+                  }
+                  setEditingId(null);
+                  toast.success('Урок обновлён');
+                  router.refresh();
+                });
               }}
               onDelete={() => {
                 if (!confirm('Удалить урок?')) return;
-                deleteLesson(courseSlug, moduleId, lesson.id);
-                toast.success('Урок удалён');
+                startTransition(async () => {
+                  const res = await deleteLessonAction(lesson.id, courseSlug);
+                  if (!res.ok) {
+                    toast.error(res.error);
+                    return;
+                  }
+                  toast.success('Урок удалён');
+                  router.refresh();
+                });
               }}
             />
           ))}
