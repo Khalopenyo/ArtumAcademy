@@ -127,15 +127,44 @@ export interface Database {
         };
         Relationships: [];
       };
+      profiles: {
+        Row: {
+          id: string;
+          name: string;
+          initials: string;
+          is_admin: boolean;
+          registered_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          name: string;
+          initials?: string;
+          is_admin?: boolean;
+          registered_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          initials?: string;
+          is_admin?: boolean;
+        };
+        Relationships: [];
+      };
       courses: {
         Row: {
           id: string;
           slug: string;
           title: string;
-          description: string | null;
-          cover_url: string | null;
-          order_index: number;
+          short_description: string;
+          long_description: string;
+          category: 'ai' | 'photo' | 'video' | 'editing' | 'design' | 'visual' | 'copy';
+          students_count: number;
+          price_minor: number;
+          cover_gradient: string;
           published: boolean;
+          order_index: number;
           created_at: string;
           updated_at: string;
         };
@@ -143,10 +172,14 @@ export interface Database {
           id?: string;
           slug: string;
           title: string;
-          description?: string | null;
-          cover_url?: string | null;
-          order_index?: number;
+          short_description?: string;
+          long_description?: string;
+          category: 'ai' | 'photo' | 'video' | 'editing' | 'design' | 'visual' | 'copy';
+          students_count?: number;
+          price_minor?: number;
+          cover_gradient?: string;
           published?: boolean;
+          order_index?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -154,10 +187,14 @@ export interface Database {
           id?: string;
           slug?: string;
           title?: string;
-          description?: string | null;
-          cover_url?: string | null;
-          order_index?: number;
+          short_description?: string;
+          long_description?: string;
+          category?: 'ai' | 'photo' | 'video' | 'editing' | 'design' | 'visual' | 'copy';
+          students_count?: number;
+          price_minor?: number;
+          cover_gradient?: string;
           published?: boolean;
+          order_index?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -168,7 +205,7 @@ export interface Database {
           id: string;
           course_id: string;
           title: string;
-          description: string | null;
+          description: string;
           order_index: number;
           created_at: string;
         };
@@ -176,7 +213,7 @@ export interface Database {
           id?: string;
           course_id: string;
           title: string;
-          description?: string | null;
+          description?: string;
           order_index?: number;
           created_at?: string;
         };
@@ -184,7 +221,7 @@ export interface Database {
           id?: string;
           course_id?: string;
           title?: string;
-          description?: string | null;
+          description?: string;
           order_index?: number;
           created_at?: string;
         };
@@ -195,40 +232,245 @@ export interface Database {
           id: string;
           module_id: string;
           title: string;
-          description: string | null;
-          video_id: string | null;
           duration_sec: number;
+          video_url: string | null;
+          preview: boolean;
           order_index: number;
-          is_preview: boolean;
-          published: boolean;
           created_at: string;
-          updated_at: string;
         };
         Insert: {
           id?: string;
           module_id: string;
           title: string;
-          description?: string | null;
-          video_id?: string | null;
           duration_sec?: number;
+          video_url?: string | null;
+          preview?: boolean;
           order_index?: number;
-          is_preview?: boolean;
-          published?: boolean;
           created_at?: string;
-          updated_at?: string;
         };
         Update: {
           id?: string;
           module_id?: string;
           title?: string;
-          description?: string | null;
-          video_id?: string | null;
           duration_sec?: number;
+          video_url?: string | null;
+          preview?: boolean;
           order_index?: number;
-          is_preview?: boolean;
-          published?: boolean;
           created_at?: string;
+        };
+        Relationships: [];
+      };
+      // ─── Artum commerce (migration 20260602000001) ───────────────
+      payments: {
+        Row: {
+          id: string;
+          user_id: string;
+          course_id: string | null;
+          amount_minor: number;
+          paid_at: string;
+          method: 'card' | 'sbp' | 'subscription';
+          status: 'succeeded' | 'refunded';
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          course_id?: string | null;
+          amount_minor: number;
+          paid_at?: string;
+          method: 'card' | 'sbp' | 'subscription';
+          status?: 'succeeded' | 'refunded';
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          course_id?: string | null;
+          amount_minor?: number;
+          paid_at?: string;
+          method?: 'card' | 'sbp' | 'subscription';
+          status?: 'succeeded' | 'refunded';
+        };
+        Relationships: [];
+      };
+      purchases: {
+        Row: {
+          user_id: string;
+          course_id: string;
+          bought_at: string;
+          amount_minor: number;
+          discount_minor: number;
+          payment_id: string | null;
+        };
+        Insert: {
+          user_id: string;
+          course_id: string;
+          bought_at?: string;
+          amount_minor: number;
+          discount_minor?: number;
+          payment_id?: string | null;
+        };
+        Update: {
+          user_id?: string;
+          course_id?: string;
+          bought_at?: string;
+          amount_minor?: number;
+          discount_minor?: number;
+          payment_id?: string | null;
+        };
+        Relationships: [];
+      };
+      lesson_progress: {
+        Row: {
+          user_id: string;
+          lesson_id: string;
+          completed_at: string;
+        };
+        Insert: {
+          user_id: string;
+          lesson_id: string;
+          completed_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          lesson_id?: string;
+          completed_at?: string;
+        };
+        Relationships: [];
+      };
+      lesson_watch_position: {
+        Row: {
+          user_id: string;
+          lesson_id: string;
+          position_sec: number;
+          duration_sec: number;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          lesson_id: string;
+          position_sec?: number;
+          duration_sec?: number;
           updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          lesson_id?: string;
+          position_sec?: number;
+          duration_sec?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      certificates: {
+        Row: {
+          id: string;
+          user_id: string;
+          course_id: string;
+          verification_number: string;
+          student_name: string;
+          issued_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          course_id: string;
+          verification_number: string;
+          student_name: string;
+          issued_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          course_id?: string;
+          verification_number?: string;
+          student_name?: string;
+          issued_at?: string;
+        };
+        Relationships: [];
+      };
+      wishlist: {
+        Row: {
+          user_id: string;
+          course_id: string;
+          added_at: string;
+        };
+        Insert: {
+          user_id: string;
+          course_id: string;
+          added_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          course_id?: string;
+          added_at?: string;
+        };
+        Relationships: [];
+      };
+      subscriptions: {
+        Row: {
+          id: string;
+          user_id: string;
+          tier: 'all_courses';
+          started_at: string;
+          expires_at: string;
+          amount_minor: number;
+          period: 'monthly' | 'yearly';
+          cancelled: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          tier?: 'all_courses';
+          started_at?: string;
+          expires_at: string;
+          amount_minor: number;
+          period: 'monthly' | 'yearly';
+          cancelled?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          tier?: 'all_courses';
+          started_at?: string;
+          expires_at?: string;
+          amount_minor?: number;
+          period?: 'monthly' | 'yearly';
+          cancelled?: boolean;
+        };
+        Relationships: [];
+      };
+      promocodes: {
+        Row: {
+          id: string;
+          code: string;
+          type: 'percent' | 'fixed';
+          value: number;
+          valid_until: string | null;
+          uses_left: number | null;
+          note: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          code: string;
+          type: 'percent' | 'fixed';
+          value: number;
+          valid_until?: string | null;
+          uses_left?: number | null;
+          note?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          code?: string;
+          type?: 'percent' | 'fixed';
+          value?: number;
+          valid_until?: string | null;
+          uses_left?: number | null;
+          note?: string;
         };
         Relationships: [];
       };
@@ -242,6 +484,10 @@ export interface Database {
       user_consents_no_update: {
         Args: Record<string, never>;
         Returns: unknown;
+      };
+      maybe_issue_certificate: {
+        Args: { p_user_id: string; p_lesson_id: string };
+        Returns: string | null;
       };
     };
     Enums: {
