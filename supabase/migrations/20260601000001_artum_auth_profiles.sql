@@ -27,14 +27,14 @@ CREATE TRIGGER profiles_set_updated_at
 -- ─── RLS ────────────────────────────────────────────────────────────
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
--- SELECT: пользователь видит свой профиль; админ видит все (для admin/users page)
+-- SELECT: пользователь видит только свой профиль. Admin-операции (список всех
+-- юзеров) идут через service_role (createAdminClient) и обходят RLS, поэтому
+-- ветка "OR is_admin" не нужна — а главное, она вызывает infinite recursion,
+-- потому что policy на profiles рекурсивно делала SELECT из profiles.
 DROP POLICY IF EXISTS profiles_self_select ON public.profiles;
 CREATE POLICY profiles_self_select ON public.profiles FOR SELECT
   TO authenticated
-  USING (
-    auth.uid() = id
-    OR EXISTS (SELECT 1 FROM public.profiles me WHERE me.id = auth.uid() AND me.is_admin = TRUE)
-  );
+  USING (auth.uid() = id);
 
 -- UPDATE: пользователь обновляет свой профиль (имя). is_admin менять нельзя — только service_role.
 DROP POLICY IF EXISTS profiles_self_update ON public.profiles;
