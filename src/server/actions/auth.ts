@@ -33,7 +33,10 @@ export async function signUpAction(input: {
     options: { data: { name: parsed.data.name } },
   });
   if (error) return { ok: false, error: translateAuthError(error.message) };
-  revalidatePath('/');
+  // 'layout' тип чтобы инвалидировать ВЕСЬ дерево layout'ов, включая
+  // marketing/app/admin layout (где живёт <Header />). Без этого
+  // Server Component Header кешируется со старым user=null.
+  revalidatePath('/', 'layout');
   return { ok: true };
 }
 
@@ -56,14 +59,14 @@ export async function signInAction(input: {
     password: parsed.data.password,
   });
   if (error) return { ok: false, error: translateAuthError(error.message) };
-  revalidatePath('/');
+  revalidatePath('/', 'layout');
   return { ok: true };
 }
 
 export async function signOutAction(): Promise<void> {
   const supabase = createServerSupabase();
   await supabase.auth.signOut();
-  revalidatePath('/');
+  revalidatePath('/', 'layout');
   redirect('/login');
 }
 
@@ -118,7 +121,8 @@ export async function updateProfileAction(input: {
     if (error) return { ok: false, error: translateAuthError(error.message) };
   }
 
-  revalidatePath('/profile');
+  // 'layout' — чтобы Header перечитал имя/инициалы для аватара
+  revalidatePath('/', 'layout');
   return { ok: true };
 }
 
