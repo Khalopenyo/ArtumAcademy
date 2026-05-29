@@ -50,12 +50,10 @@ export default function ForgotPasswordPage() {
           </div>
 
           <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 text-xs backdrop-blur">
-            <p className="font-medium text-foreground">SMTP пока не настроен</p>
+            <p className="font-medium text-foreground">Письмо в пути</p>
             <p className="mt-1 text-muted-foreground">
-              Реальное письмо не доставится (пока подключим SMTP). Чтобы протестировать flow,
-              открой Supabase Dashboard → Authentication → Users → найди свой email →
-              Send password reset → возьми ссылку из{' '}
-              <code className="rounded bg-card/80 px-1 font-mono text-[10px]">auth.flow_state</code>.
+              Обычно приходит за 30 секунд. Не нашли — проверьте папку «Спам». Ссылка
+              действует 1 час.
             </p>
           </div>
 
