@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
+import { auditLog } from '@/lib/audit-log';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getCurrentUser } from '@/server/queries/auth';
 import { getMyActiveSubscription } from '@/server/queries/commerce';
@@ -143,6 +144,21 @@ export async function buyCourseAction(
         .eq('id', promoIdToDecrement);
     }
   }
+
+  // Audit — компла-критично: log платежа для отчётов + 54-ФЗ трейл
+  await auditLog({
+    userId: auth.userId,
+    action: 'payment.succeeded',
+    entityType: 'payment',
+    entityId: payment.id,
+    meta: {
+      course_slug: courseSlug,
+      amount_minor: amountMinor,
+      discount_minor: discountMinor,
+      promocode: promocode ?? null,
+      method: 'card',
+    },
+  });
 
   revalidatePath('/');
   revalidatePath('/profile');
@@ -349,6 +365,18 @@ export async function buySubscriptionAction(
     await admin.from('payments').delete().eq('id', payment.id);
     return { ok: false, error: subError.message };
   }
+
+  await auditLog({
+    userId: auth.userId,
+    action: 'subscription.purchased',
+    entityType: 'payment',
+    entityId: payment.id,
+    meta: {
+      amount_minor: amountMinor,
+      period,
+      expires_at: expiresAt.toISOString(),
+    },
+  });
 
   revalidatePath('/');
   revalidatePath('/profile');

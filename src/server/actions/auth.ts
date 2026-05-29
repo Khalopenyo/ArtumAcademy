@@ -4,10 +4,25 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
+import { auditLog } from '@/lib/audit-log';
+import { getClientIp } from '@/lib/headers/client-ip';
+import { rateLimit } from '@/lib/rate-limit';
 import { createServerSupabase } from '@/lib/supabase/server';
 import { getCurrentUser } from '@/server/queries/auth';
 
 type ActionResult = { ok: true } | { ok: false; error: string };
+
+function ipOrUnknown(): string {
+  return getClientIp() ?? 'unknown';
+}
+
+function rateLimitError(retryAfterSec: number): { ok: false; error: string } {
+  const min = Math.ceil(retryAfterSec / 60);
+  return {
+    ok: false,
+    error: `Слишком много попыток. Попробуйте через ${min} мин.`,
+  };
+}
 
 // ─── SIGN UP / SIGN IN / SIGN OUT ───────────────────────────────────
 
@@ -26,13 +41,36 @@ export async function signUpAction(input: {
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Невалидные данные' };
   }
+  // Rate limit: 3 регистрации в час с одного IP (анти-спам)
+  const ip = ipOrUnknown();
+  const rl = await rateLimit({
+    key: ip,
+    action: 'auth.register',
+    windowSec: 3600,
+    maxAttempts: 3,
+  });
+  if (!rl.ok) return rateLimitError(rl.retryAfterSec ?? 3600);
+
   const supabase = createServerSupabase();
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
     options: { data: { name: parsed.data.name } },
   });
   if (error) return { ok: false, error: translateAuthError(error.message) };
+
+  // Audit: успешная регистрация. user может быть null если включено email
+  // confirmation (тогда юзер есть, но сессии нет до подтверждения).
+  if (data.user) {
+    await auditLog({
+      userId: data.user.id,
+      action: 'auth.register',
+      entityType: 'user',
+      entityId: data.user.id,
+      meta: { email: parsed.data.email },
+    });
+  }
+
   // 'layout' тип чтобы инвалидировать ВЕСЬ дерево layout'ов, включая
   // marketing/app/admin layout (где живёт <Header />). Без этого
   // Server Component Header кешируется со старым user=null.
@@ -53,19 +91,48 @@ export async function signInAction(input: {
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Невалидные данные' };
   }
+  // Rate limit: 5 попыток за 15 минут на пару (IP + email) — анти-брутфорс
+  const ip = ipOrUnknown();
+  const rl = await rateLimit({
+    key: `${ip}:${parsed.data.email.toLowerCase()}`,
+    action: 'auth.login',
+    windowSec: 900,
+    maxAttempts: 5,
+  });
+  if (!rl.ok) return rateLimitError(rl.retryAfterSec ?? 900);
+
   const supabase = createServerSupabase();
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email: parsed.data.email,
     password: parsed.data.password,
   });
   if (error) return { ok: false, error: translateAuthError(error.message) };
+
+  if (data.user) {
+    await auditLog({
+      userId: data.user.id,
+      action: 'auth.login',
+      entityType: 'user',
+      entityId: data.user.id,
+    });
+  }
+
   revalidatePath('/', 'layout');
   return { ok: true };
 }
 
 export async function signOutAction(): Promise<void> {
   const supabase = createServerSupabase();
+  const user = await getCurrentUser();
   await supabase.auth.signOut();
+  if (user) {
+    await auditLog({
+      userId: user.id,
+      action: 'auth.logout',
+      entityType: 'user',
+      entityId: user.id,
+    });
+  }
   revalidatePath('/', 'layout');
   redirect('/login');
 }
@@ -75,6 +142,16 @@ export async function signOutAction(): Promise<void> {
 export async function requestPasswordResetAction(email: string): Promise<ActionResult> {
   const validation = z.string().email().safeParse(email);
   if (!validation.success) return { ok: false, error: 'Некорректный email' };
+
+  // Rate limit: 3 запроса в час на email — анти-email-бомба
+  const rl = await rateLimit({
+    key: `email:${email.toLowerCase()}`,
+    action: 'auth.forgot_password',
+    windowSec: 3600,
+    maxAttempts: 3,
+  });
+  if (!rl.ok) return rateLimitError(rl.retryAfterSec ?? 3600);
+
   const supabase = createServerSupabase();
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ?? 'http://localhost:3000';
