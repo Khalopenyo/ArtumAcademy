@@ -40,7 +40,12 @@ export default function PrivacyPage() {
             <a href="https://artumacademy.ru" className="text-primary hover:underline">
               artumacademy.ru
             </a>
-            . Оператор обработки ПДн — [укажите ИП/ООО, ИНН, юр. адрес].
+            . Оператор обработки ПДн — Самозанятый Юнусов Халид Хаважбаудиевич,
+            ИНН <b>201402064844</b>. Полные реквизиты:{' '}
+            <a href="/contacts" className="text-primary hover:underline">
+              artumacademy.ru/contacts
+            </a>
+            .
           </p>
           <p>
             Используя Сервис, вы соглашаетесь с условиями настоящей Политики.

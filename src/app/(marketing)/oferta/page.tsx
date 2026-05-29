@@ -32,9 +32,9 @@ export default function OfertaPage() {
         <Section title="1. Общие положения">
           <p>
             Настоящая публичная оферта (далее — «Оферта») является официальным
-            предложением [ИП ФИО / ООО, ИНН, юр. адрес] (далее — «Исполнитель»)
-            заключить договор на предоставление доступа к образовательным
-            материалам сервиса{' '}
+            предложением Самозанятого Юнусова Халида Хаважбаудиевича, ИНН{' '}
+            <b>201402064844</b> (далее — «Исполнитель») заключить договор на
+            предоставление доступа к образовательным материалам сервиса{' '}
             <a href="https://artumacademy.ru" className="text-primary hover:underline">
               artumacademy.ru
             </a>{' '}
@@ -96,8 +96,8 @@ export default function OfertaPage() {
           </ul>
           <p>
             Запрос направляется на{' '}
-            <a href="mailto:support@artumacademy.ru" className="text-primary hover:underline">
-              support@artumacademy.ru
+            <a href="mailto:tkes777@mail.ru" className="text-primary hover:underline">
+              tkes777@mail.ru
             </a>
             . Возврат — на ту же карту в течение 10 банковских дней.
           </p>
@@ -133,16 +133,23 @@ export default function OfertaPage() {
 
         <Section title="9. Контакты Исполнителя">
           <ul>
-            <li>Наименование: [ИП ФИО / ООО]</li>
-            <li>ИНН: [укажите]</li>
-            <li>Юр. адрес: [укажите]</li>
-            <li>Email: support@artumacademy.ru</li>
+            <li>Статус: Самозанятый (НПД)</li>
+            <li>ФИО: Юнусов Халид Хаважбаудиевич</li>
+            <li>ИНН: 201402064844</li>
+            <li>Email: tkes777@mail.ru</li>
+            <li>Телефон: +7 (928) 087-33-32</li>
+            <li>
+              Полные реквизиты:{' '}
+              <a href="/contacts" className="text-primary hover:underline">
+                artumacademy.ru/contacts
+              </a>
+            </li>
           </ul>
         </Section>
 
         <footer className="border-t border-border/40 pt-4 text-xs text-muted-foreground">
-          ⚠️ Это типовой скелет. Перед публичным запуском заполнить реквизиты и
-          утвердить у юриста.
+          Чек по 54-ФЗ за каждую покупку формирует приложение «Мой налог» и
+          направляется на email Покупателя.
         </footer>
       </GlassCard>
     </div>
