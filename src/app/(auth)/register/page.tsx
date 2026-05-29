@@ -128,13 +128,13 @@ function RegisterInner() {
             />
             <Label htmlFor="agree" className="text-xs font-normal leading-relaxed text-muted-foreground">
               Я согласен с{' '}
-              <span className="text-primary underline-offset-2 hover:underline">
-                условиями использования
-              </span>
-              {' '}и{' '}
-              <span className="text-primary underline-offset-2 hover:underline">
+              <Link href="/oferta" target="_blank" className="text-primary underline-offset-2 hover:underline">
+                публичной офертой
+              </Link>
+              {' '}и даю согласие на обработку персональных данных в соответствии с{' '}
+              <Link href="/privacy" target="_blank" className="text-primary underline-offset-2 hover:underline">
                 политикой конфиденциальности
-              </span>
+              </Link>
             </Label>
           </div>
 

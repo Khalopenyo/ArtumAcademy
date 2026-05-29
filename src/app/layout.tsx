@@ -2,18 +2,70 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { Toaster } from 'sonner';
 
+import { CookieConsent } from '@/components/shared/CookieConsent';
 import { CosmicBackground } from '@/components/shared/CosmicBackground';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin', 'cyrillic'], variable: '--font-sans' });
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ?? 'https://artumacademy.ru';
+const SITE_NAME = 'Artum Academy';
+const DEFAULT_TITLE = 'Artum Academy — онлайн-курсы по AI, фото, видео, дизайну';
+const DEFAULT_DESCRIPTION =
+  'Образовательная платформа с курсами по нейросетям, фотографии, видеосъёмке, монтажу, дизайну, визуалу и копирайтингу. Учитесь у профессионалов в любом темпе.';
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: 'Artum Academy — онлайн-курсы по AI, фото, видео, дизайну',
+    default: DEFAULT_TITLE,
     template: '%s · Artum Academy',
   },
-  description:
-    'Образовательная платформа с курсами по нейросетям, фотографии, видеосъёмке, монтажу, дизайну, визуалу и копирайтингу.',
+  description: DEFAULT_DESCRIPTION,
+  keywords: [
+    'онлайн-курсы',
+    'нейросети',
+    'AI',
+    'Midjourney',
+    'ChatGPT',
+    'фотография',
+    'видеосъёмка',
+    'монтаж',
+    'дизайн',
+    'Figma',
+    'копирайтинг',
+    'обучение',
+  ],
+  authors: [{ name: SITE_NAME, url: SITE_URL }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'ru_RU',
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    creator: '@artum_academy',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   icons: {
     icon: '/favicon.ico',
     apple: '/apple-touch-icon.png',
@@ -39,6 +91,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen font-sans text-foreground antialiased">
         <CosmicBackground />
         {children}
+        <CookieConsent />
         <Toaster position="top-right" theme="dark" richColors />
       </body>
     </html>

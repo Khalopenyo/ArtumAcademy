@@ -77,8 +77,23 @@ export function Footer({ className }: FooterProps) {
           <h4 className="mb-2.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
             Контакты
           </h4>
-          <p className="text-[11px] text-primary">hello@artum.academy</p>
+          <p className="text-[11px] text-primary">hello@artumacademy.ru</p>
           <p className="mt-1 text-[11px] text-muted-foreground/70">+7 (999) 123-45-67</p>
+        </div>
+      </div>
+
+      {/* Юр-бар */}
+      <div className="border-t border-border/30">
+        <div className="container mx-auto flex flex-col items-center justify-between gap-2 px-4 py-3 text-[10px] text-muted-foreground/70 sm:flex-row sm:px-9">
+          <span>© 2026 Artum Academy. Все права защищены.</span>
+          <div className="flex gap-4">
+            <Link href="/privacy" className="transition-colors hover:text-[#C4A8FF]">
+              Политика конфиденциальности
+            </Link>
+            <Link href="/oferta" className="transition-colors hover:text-[#C4A8FF]">
+              Оферта
+            </Link>
+          </div>
         </div>
       </div>
     </footer>
