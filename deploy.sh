@@ -27,6 +27,7 @@ rsync -az --delete \
   --exclude 'playwright-report' \
   --exclude 'test-results' \
   --exclude '.DS_Store' \
+  --exclude '.env.local' \
   -e "$SSH_CMD" \
   ./ "$SERVER:$REMOTE_DIR/"
 
