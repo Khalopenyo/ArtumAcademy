@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
+import { decideLessonAccess } from '@/lib/access/lesson-access';
 import { auditLog } from '@/lib/audit-log';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getCurrentUser } from '@/server/queries/auth';
@@ -26,6 +27,63 @@ async function getOrFail(): Promise<
   const user = await getCurrentUser();
   if (!user) return { ok: false, error: 'Сначала войдите в аккаунт' };
   return { ok: true, userId: user.id };
+}
+
+/**
+ * Проверяет доступ пользователя к курсу, которому принадлежит урок.
+ * Гейт для прогресса/сертификата: Server Action — открытый эндпоинт, и без
+ * этой проверки залогиненный юзер мог отметить уроки неоплаченного курса
+ * и получить сертификат без покупки. Доступ = preview | admin | подписка | покупка.
+ */
+async function assertLessonAccess(userId: string, lessonId: string): Promise<ActionResult> {
+  const admin = createAdminClient();
+
+  const { data } = await admin
+    .from('lessons')
+    .select('preview, modules:module_id ( course_id )')
+    .eq('id', lessonId)
+    .maybeSingle();
+
+  const row = data as
+    | { preview: boolean; modules: { course_id: string }[] | { course_id: string } | null }
+    | null;
+  const courseId = !row
+    ? undefined
+    : Array.isArray(row.modules)
+      ? row.modules[0]?.course_id
+      : row.modules?.course_id;
+
+  if (!row || !courseId) return { ok: false, error: 'Урок не найден' };
+
+  // preview открыт всем — не делаем лишних запросов
+  if (row.preview === true) return { ok: true };
+
+  const [{ data: profile }, { data: sub }, { data: purchase }] = await Promise.all([
+    admin.from('profiles').select('is_admin').eq('id', userId).maybeSingle(),
+    admin
+      .from('subscriptions')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('cancelled', false)
+      .gt('expires_at', new Date().toISOString())
+      .limit(1)
+      .maybeSingle(),
+    admin
+      .from('purchases')
+      .select('user_id')
+      .eq('user_id', userId)
+      .eq('course_id', courseId)
+      .maybeSingle(),
+  ]);
+
+  const decision = decideLessonAccess({
+    lessonExists: true,
+    isPreview: false,
+    isAdmin: (profile as { is_admin?: boolean } | null)?.is_admin === true,
+    hasActiveSubscription: !!sub,
+    hasPurchase: !!purchase,
+  });
+  return decision.allowed ? { ok: true } : { ok: false, error: 'Нет доступа к этому курсу' };
 }
 
 /** Цены подписки (копейки) — синхронизировано со store SUBSCRIPTION_PRICES */
@@ -182,6 +240,9 @@ export async function markLessonCompleteAction(lessonId: string): Promise<Action
     return { ok: false, error: 'Невалидный lesson id' };
   }
 
+  const access = await assertLessonAccess(auth.userId, lessonId);
+  if (!access.ok) return access;
+
   const admin = createAdminClient();
   const { error } = await admin
     .from('lesson_progress')
@@ -231,6 +292,10 @@ export async function recordWatchProgressAction(
   if (!z.string().uuid().safeParse(lessonId).success) {
     return { ok: false, error: 'Невалидный lesson id' };
   }
+
+  const access = await assertLessonAccess(auth.userId, lessonId);
+  if (!access.ok) return access;
+
   const pos = Math.max(0, Math.floor(positionSec));
   const dur = Math.max(0, Math.floor(durationSec));
 
