@@ -83,7 +83,7 @@ export function CookieConsent() {
             type="button"
             onClick={() => accept('essential')}
             aria-label="Закрыть"
-            className="ml-1 text-muted-foreground hover:text-foreground sm:hidden"
+            className="-mr-1.5 inline-flex size-11 items-center justify-center text-muted-foreground hover:text-foreground sm:hidden"
           >
             <X className="size-4" aria-hidden />
           </button>
