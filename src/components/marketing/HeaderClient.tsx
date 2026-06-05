@@ -46,7 +46,7 @@ export function HeaderClient({ className, user }: HeaderClientProps) {
 
   function isActive(item: (typeof NAV_ITEMS)[number]): boolean {
     if (item.match === 'home') return pathname === '/';
-    if (item.match === 'courses') return pathname === '/' || pathname.startsWith('/courses');
+    if (item.match === 'courses') return pathname.startsWith('/courses');
     if (item.match === 'cases') return pathname.startsWith('/cases');
     if (item.match === 'about') return pathname.startsWith('/about');
     if (item.match === 'contacts') return pathname.startsWith('/contacts');
