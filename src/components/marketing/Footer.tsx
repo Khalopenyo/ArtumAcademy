@@ -34,16 +34,16 @@ export function Footer({ className }: FooterProps) {
               target="_blank"
               rel="noreferrer noopener"
               aria-label="Telegram"
-              className="inline-flex size-11 items-center justify-center rounded-lg bg-card/60 text-muted-foreground transition-all hover:bg-primary/20 hover:text-[#C4A8FF]"
+              className="inline-flex size-7 items-center justify-center rounded-md bg-card/60 text-muted-foreground transition-all hover:bg-primary/20 hover:text-[#C4A8FF]"
             >
-              <Send className="size-5" aria-hidden />
+              <Send className="size-3.5" aria-hidden />
             </a>
             <a
               href="https://vk.com/artum_academy"
               target="_blank"
               rel="noreferrer noopener"
               aria-label="VK"
-              className="inline-flex size-11 items-center justify-center rounded-lg bg-card/60 text-sm font-bold text-muted-foreground transition-all hover:bg-primary/20 hover:text-[#C4A8FF]"
+              className="inline-flex size-7 items-center justify-center rounded-md bg-card/60 text-[11px] font-bold text-muted-foreground transition-all hover:bg-primary/20 hover:text-[#C4A8FF]"
             >
               VK
             </a>
