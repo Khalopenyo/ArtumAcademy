@@ -5,7 +5,7 @@ import { GlassCard } from '@/components/shared/GlassCard';
 export const metadata = {
   title: 'Контакты и реквизиты',
   description:
-    'Контактные данные и реквизиты Исполнителя сервиса Artum Academy. Самозанятый Юнусов Х. Х., ИНН 201402064844.',
+    'Контактные данные и реквизиты Исполнителя сервиса Artum Academy. Самозанятый Абдулкадыров Я. Д., ИНН 201302285050.',
 };
 
 /**
@@ -39,14 +39,14 @@ export default function ContactsPage() {
           <ContactRow
             icon={<Mail className="size-5" aria-hidden />}
             label="Email"
-            value="tkes777@mail.ru"
-            href="mailto:tkes777@mail.ru"
+            value="ramzan.aliev.97@mail.ru"
+            href="mailto:ramzan.aliev.97@mail.ru"
           />
           <ContactRow
             icon={<Phone className="size-5" aria-hidden />}
             label="Телефон"
-            value="+7 (928) 087-33-32"
-            href="tel:+79280873332"
+            value="+7 (938) 994-45-99"
+            href="tel:+79389944599"
           />
           <ContactRow
             icon={<Send className="size-5" aria-hidden />}
@@ -79,22 +79,22 @@ export default function ContactsPage() {
           <Field label="ФИО">
             <span className="inline-flex items-center gap-2">
               <User className="size-4 text-muted-foreground" aria-hidden />
-              Юнусов Халид Хаважбаудиевич
+              Абдулкадыров Ясин Дагаевич
             </span>
           </Field>
           <Field label="ИНН">
             <code className="font-mono text-base font-semibold tracking-wider text-foreground">
-              201402064844
+              201302285050
             </code>
           </Field>
           <Field label="Email">
-            <a href="mailto:tkes777@mail.ru" className="text-primary hover:underline">
-              tkes777@mail.ru
+            <a href="mailto:ramzan.aliev.97@mail.ru" className="text-primary hover:underline">
+              ramzan.aliev.97@mail.ru
             </a>
           </Field>
           <Field label="Телефон">
-            <a href="tel:+79280873332" className="text-primary hover:underline">
-              +7 (928) 087-33-32
+            <a href="tel:+79389944599" className="text-primary hover:underline">
+              +7 (938) 994-45-99
             </a>
           </Field>
           <Field label="Сайт">

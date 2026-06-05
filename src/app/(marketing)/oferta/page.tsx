@@ -32,8 +32,8 @@ export default function OfertaPage() {
         <Section title="1. Общие положения">
           <p>
             Настоящая публичная оферта (далее — «Оферта») является официальным
-            предложением Самозанятого Юнусова Халида Хаважбаудиевича, ИНН{' '}
-            <b>201402064844</b> (далее — «Исполнитель») заключить договор на
+            предложением Самозанятого Абдулкадырова Ясина Дагаевича, ИНН{' '}
+            <b>201302285050</b> (далее — «Исполнитель») заключить договор на
             предоставление доступа к образовательным материалам сервиса{' '}
             <a href="https://artumacademy.ru" className="text-primary hover:underline">
               artumacademy.ru
@@ -96,8 +96,8 @@ export default function OfertaPage() {
           </ul>
           <p>
             Запрос направляется на{' '}
-            <a href="mailto:tkes777@mail.ru" className="text-primary hover:underline">
-              tkes777@mail.ru
+            <a href="mailto:ramzan.aliev.97@mail.ru" className="text-primary hover:underline">
+              ramzan.aliev.97@mail.ru
             </a>
             . Возврат — на ту же карту в течение 10 банковских дней.
           </p>
@@ -134,10 +134,10 @@ export default function OfertaPage() {
         <Section title="9. Контакты Исполнителя">
           <ul>
             <li>Статус: Самозанятый (НПД)</li>
-            <li>ФИО: Юнусов Халид Хаважбаудиевич</li>
-            <li>ИНН: 201402064844</li>
-            <li>Email: tkes777@mail.ru</li>
-            <li>Телефон: +7 (928) 087-33-32</li>
+            <li>ФИО: Абдулкадыров Ясин Дагаевич</li>
+            <li>ИНН: 201302285050</li>
+            <li>Email: ramzan.aliev.97@mail.ru</li>
+            <li>Телефон: +7 (938) 994-45-99</li>
             <li>
               Полные реквизиты:{' '}
               <a href="/contacts" className="text-primary hover:underline">

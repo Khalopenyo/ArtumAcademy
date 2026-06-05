@@ -77,11 +77,11 @@ export function Footer({ className }: FooterProps) {
           <h4 className="mb-2.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
             Контакты
           </h4>
-          <p className="text-[11px] text-primary">tkes777@mail.ru</p>
-          <p className="mt-1 text-[11px] text-muted-foreground/70">+7 (928) 087-33-32</p>
+          <p className="text-[11px] text-primary">ramzan.aliev.97@mail.ru</p>
+          <p className="mt-1 text-[11px] text-muted-foreground/70">+7 (938) 994-45-99</p>
           <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground/60">
-            Самозанятый Юнусов Х. Х.<br />
-            ИНН 201402064844
+            Самозанятый Абдулкадыров Я. Д.<br />
+            ИНН 201302285050
           </p>
         </div>
       </div>
