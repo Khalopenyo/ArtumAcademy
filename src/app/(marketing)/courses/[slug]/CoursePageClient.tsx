@@ -147,7 +147,7 @@ export default function CoursePageClient({
         К каталогу курсов
       </Link>
 
-      <div className="grid gap-8 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         {/* Левая колонка — описание + уроки */}
         <div className="space-y-8 lg:col-span-2">
           <div className="overflow-hidden rounded-2xl border border-border/60">
