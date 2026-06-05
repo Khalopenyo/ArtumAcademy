@@ -3,6 +3,8 @@ import { getMyActiveSubscription } from '@/server/queries/commerce';
 
 import { SubscribeClient } from './SubscribeClient';
 
+export const metadata = { title: 'Подписка' };
+
 /**
  * /subscribe — лендинг тарифов подписки.
  * Server-fetched: текущий пользователь + активная подписка (для гейтинга

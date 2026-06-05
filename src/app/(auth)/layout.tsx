@@ -3,6 +3,8 @@ import { ChevronLeft } from 'lucide-react';
 
 import { Logo } from '@/components/shared/Logo';
 
+export const metadata = { title: 'Вход и регистрация' };
+
 /**
  * Auth route-group layout — космическая тема Artum.
  * Минимальная chrome: лого + ссылка на главную. Центрированная карточка
