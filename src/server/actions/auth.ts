@@ -36,7 +36,7 @@ export async function signUpAction(input: {
   name: string;
   email: string;
   password: string;
-}): Promise<ActionResult> {
+}): Promise<{ ok: true; needsConfirmation: boolean } | { ok: false; error: string }> {
   const parsed = SignUpSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Невалидные данные' };
@@ -71,11 +71,14 @@ export async function signUpAction(input: {
     });
   }
 
-  // 'layout' тип чтобы инвалидировать ВЕСЬ дерево layout'ов, включая
-  // marketing/app/admin layout (где живёт <Header />). Без этого
-  // Server Component Header кешируется со старым user=null.
+  // Если включён "Confirm email" — сессии нет до подтверждения почты
+  // (Supabase уже отправил письмо с кодом по шаблону "Confirm signup").
+  const needsConfirmation = !data.session;
+
+  // 'layout' тип чтобы инвалидировать ВЕСЬ дерево layout'ов (Header),
+  // если вход произошёл сразу (Confirm email выключен).
   revalidatePath('/', 'layout');
-  return { ok: true };
+  return { ok: true, needsConfirmation };
 }
 
 const SignInSchema = z.object({
@@ -247,6 +250,79 @@ export async function verifyEmailCodeAction(input: {
   }
 
   revalidatePath('/', 'layout');
+  return { ok: true };
+}
+
+// ─── ПОДТВЕРЖДЕНИЕ EMAIL ПРИ РЕГИСТРАЦИИ ─────────────────────────────
+
+/**
+ * Проверяет код подтверждения регистрации (verifyOtp type:'signup').
+ * При успехе email подтверждён и устанавливается сессия. Rate-limit
+ * обязателен — 6-значный код брутфорсится.
+ */
+export async function verifySignupCodeAction(input: {
+  email: string;
+  code: string;
+}): Promise<ActionResult> {
+  const schema = z.object({
+    email: z.string().email('Некорректный email'),
+    code: z
+      .string()
+      .trim()
+      .regex(/^\d{6}$/, 'Код состоит из 6 цифр'),
+  });
+  const parsed = schema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? 'Невалидные данные' };
+  }
+
+  const ip = ipOrUnknown();
+  const rl = await rateLimit({
+    key: `${ip}:${parsed.data.email.toLowerCase()}`,
+    action: 'auth.signup_verify',
+    windowSec: 900,
+    maxAttempts: 6,
+  });
+  if (!rl.ok) return rateLimitError(rl.retryAfterSec ?? 900);
+
+  const supabase = createServerSupabase();
+  const { data, error } = await supabase.auth.verifyOtp({
+    email: parsed.data.email,
+    token: parsed.data.code,
+    type: 'signup',
+  });
+  if (error) return { ok: false, error: translateAuthError(error.message) };
+
+  if (data.user) {
+    await auditLog({
+      userId: data.user.id,
+      action: 'auth.register_confirmed',
+      entityType: 'user',
+      entityId: data.user.id,
+    });
+  }
+
+  revalidatePath('/', 'layout');
+  return { ok: true };
+}
+
+/** Повторно отправляет письмо с кодом подтверждения регистрации. */
+export async function resendSignupCodeAction(email: string): Promise<ActionResult> {
+  const parsed = z.string().email().safeParse(email);
+  if (!parsed.success) return { ok: false, error: 'Некорректный email' };
+
+  const ip = ipOrUnknown();
+  const rl = await rateLimit({
+    key: `${ip}:${parsed.data.toLowerCase()}`,
+    action: 'auth.signup_resend',
+    windowSec: 3600,
+    maxAttempts: 5,
+  });
+  if (!rl.ok) return rateLimitError(rl.retryAfterSec ?? 3600);
+
+  const supabase = createServerSupabase();
+  const { error } = await supabase.auth.resend({ type: 'signup', email: parsed.data });
+  if (error) console.error('[auth.resendSignupCode]', error.message);
   return { ok: true };
 }
 
