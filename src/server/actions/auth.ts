@@ -216,7 +216,7 @@ export async function verifyEmailCodeAction(input: {
     code: z
       .string()
       .trim()
-      .regex(/^\d{6}$/, 'Код состоит из 6 цифр'),
+      .regex(/^\d{6,10}$/, 'Код состоит из 6–10 цифр'),
   });
   const parsed = schema.safeParse(input);
   if (!parsed.success) {
@@ -269,7 +269,7 @@ export async function verifySignupCodeAction(input: {
     code: z
       .string()
       .trim()
-      .regex(/^\d{6}$/, 'Код состоит из 6 цифр'),
+      .regex(/^\d{6,10}$/, 'Код состоит из 6–10 цифр'),
   });
   const parsed = schema.safeParse(input);
   if (!parsed.success) {

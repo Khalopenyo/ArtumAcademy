@@ -206,12 +206,12 @@ function LoginInner() {
                 id="otp"
                 inputMode="numeric"
                 autoComplete="one-time-code"
-                pattern="\d{6}"
-                maxLength={6}
-                placeholder="000000"
+                pattern="\d{6,10}"
+                maxLength={10}
+                placeholder="Код из письма"
                 required
                 value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 10))}
                 disabled={pending}
                 className={`${inputCls} text-center text-lg tracking-[0.5em]`}
               />
@@ -219,7 +219,7 @@ function LoginInner() {
 
             {error ? <ErrorBox>{error}</ErrorBox> : null}
 
-            <Button type="submit" size="lg" className={primaryCls} disabled={pending || code.length !== 6}>
+            <Button type="submit" size="lg" className={primaryCls} disabled={pending || code.length < 6}>
               {pending ? 'Проверяем…' : 'Войти'}
             </Button>
 
