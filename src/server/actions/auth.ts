@@ -171,6 +171,85 @@ export async function updatePasswordAction(newPassword: string): Promise<ActionR
   return { ok: true };
 }
 
+// ─── EMAIL CODE (OTP — passwordless вход для существующих аккаунтов) ──
+
+/**
+ * Шаг 1: отправляет 6-значный код на email (Supabase signInWithOtp).
+ * `shouldCreateUser: false` — вход только для существующих аккаунтов;
+ * регистрация остаётся через форму (имя + согласие 152-ФЗ).
+ * Анти-enumeration: всегда возвращаем ok, не раскрывая существование email.
+ */
+export async function requestEmailCodeAction(email: string): Promise<ActionResult> {
+  const parsed = z.string().email().safeParse(email);
+  if (!parsed.success) return { ok: false, error: 'Некорректный email' };
+
+  const ip = ipOrUnknown();
+  const rl = await rateLimit({
+    key: `${ip}:${parsed.data.toLowerCase()}`,
+    action: 'auth.email_code',
+    windowSec: 3600,
+    maxAttempts: 5,
+  });
+  if (!rl.ok) return rateLimitError(rl.retryAfterSec ?? 3600);
+
+  const supabase = createServerSupabase();
+  const { error } = await supabase.auth.signInWithOtp({
+    email: parsed.data,
+    options: { shouldCreateUser: false },
+  });
+  if (error) console.error('[auth.requestEmailCode]', error.message);
+  return { ok: true };
+}
+
+/**
+ * Шаг 2: проверяет код и логинит. Rate-limit обязателен — 6 цифр брутфорсятся.
+ */
+export async function verifyEmailCodeAction(input: {
+  email: string;
+  code: string;
+}): Promise<ActionResult> {
+  const schema = z.object({
+    email: z.string().email('Некорректный email'),
+    code: z
+      .string()
+      .trim()
+      .regex(/^\d{6}$/, 'Код состоит из 6 цифр'),
+  });
+  const parsed = schema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? 'Невалидные данные' };
+  }
+
+  const ip = ipOrUnknown();
+  const rl = await rateLimit({
+    key: `${ip}:${parsed.data.email.toLowerCase()}`,
+    action: 'auth.email_code_verify',
+    windowSec: 900,
+    maxAttempts: 5,
+  });
+  if (!rl.ok) return rateLimitError(rl.retryAfterSec ?? 900);
+
+  const supabase = createServerSupabase();
+  const { data, error } = await supabase.auth.verifyOtp({
+    email: parsed.data.email,
+    token: parsed.data.code,
+    type: 'email',
+  });
+  if (error) return { ok: false, error: translateAuthError(error.message) };
+
+  if (data.user) {
+    await auditLog({
+      userId: data.user.id,
+      action: 'auth.login_otp',
+      entityType: 'user',
+      entityId: data.user.id,
+    });
+  }
+
+  revalidatePath('/', 'layout');
+  return { ok: true };
+}
+
 // ─── PROFILE ────────────────────────────────────────────────────────
 
 export async function updateProfileAction(input: {
@@ -215,6 +294,9 @@ function computeInitials(name: string): string {
 function translateAuthError(message: string): string {
   const map: Record<string, string> = {
     'Invalid login credentials': 'Неверный email или пароль',
+    'Token has expired or is invalid': 'Код неверный или истёк — запросите новый',
+    'Otp has expired': 'Код истёк — запросите новый',
+    'Signups not allowed for otp': 'Аккаунт не найден. Сначала зарегистрируйтесь.',
     'User already registered': 'Пользователь с таким email уже зарегистрирован',
     'Email not confirmed': 'Email ещё не подтверждён. Проверьте почту.',
     'Email rate limit exceeded': 'Слишком много попыток. Попробуйте через минуту.',
