@@ -96,6 +96,9 @@ export function Footer({ className }: FooterProps) {
             <Link href="/requisites" className="transition-colors hover:text-[#C4A8FF]">
               Реквизиты
             </Link>
+            <Link href="/faq" className="transition-colors hover:text-[#C4A8FF]">
+              Вопросы
+            </Link>
           </div>
         </div>
       </div>
