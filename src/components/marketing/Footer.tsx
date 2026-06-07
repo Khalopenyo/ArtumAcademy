@@ -79,10 +79,6 @@ export function Footer({ className }: FooterProps) {
           </h4>
           <p className="text-[11px] text-primary">ramzan.aliev.97@mail.ru</p>
           <p className="mt-1 text-[11px] text-muted-foreground/70">+7 (938) 994-45-99</p>
-          <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground/60">
-            Самозанятый Абдулкадыров Я. Д.<br />
-            ИНН 201302285050
-          </p>
         </div>
       </div>
 
@@ -96,6 +92,9 @@ export function Footer({ className }: FooterProps) {
             </Link>
             <Link href="/oferta" className="transition-colors hover:text-[#C4A8FF]">
               Оферта
+            </Link>
+            <Link href="/requisites" className="transition-colors hover:text-[#C4A8FF]">
+              Реквизиты
             </Link>
           </div>
         </div>

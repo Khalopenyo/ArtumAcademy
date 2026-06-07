@@ -1,26 +1,20 @@
-import { FileText, Mail, MessageCircle, Phone, Send, User } from 'lucide-react';
+import Link from 'next/link';
+import { Mail, MessageCircle, Phone, Send } from 'lucide-react';
 
 import { GlassCard } from '@/components/shared/GlassCard';
 
 export const metadata = {
-  title: 'Контакты и реквизиты',
-  description:
-    'Контактные данные и реквизиты Исполнителя сервиса Artum Academy. Самозанятый Абдулкадыров Я. Д., ИНН 201302285050.',
+  title: 'Контакты',
+  description: 'Связаться с поддержкой Artum Academy: email, телефон, Telegram.',
 };
 
 /**
- * /contacts — публичная страница с реквизитами Исполнителя.
- * Используется ЮKassa-модератором для верификации (поле "Ссылка на
- * страницу с реквизитами" при подключении магазина).
- *
- * ИНН и ФИО должны быть видны на этой странице открыто (требование
- * 152-ФЗ + договор с ЮKassa). Если изменишь рег. форму (например,
- * с самозанятого на ИП) — поправь блок «Реквизиты» ниже.
+ * /contacts — публичная страница контактов. Полные реквизиты Исполнителя
+ * вынесены на отдельную страницу /requisites (ссылка ниже и в футере).
  */
 export default function ContactsPage() {
   return (
     <div className="container mx-auto max-w-2xl px-4 py-10 sm:py-14">
-      {/* Контакты */}
       <GlassCard glow className="p-7 sm:p-10">
         <div className="text-center">
           <div
@@ -56,70 +50,15 @@ export default function ContactsPage() {
             external
           />
         </div>
-      </GlassCard>
 
-      {/* Реквизиты Исполнителя */}
-      <GlassCard className="mt-6 p-7 sm:p-10">
-        <header className="flex items-start gap-3">
-          <div className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
-            <FileText className="size-5" aria-hidden />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold tracking-tight">Реквизиты Исполнителя</h2>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Информация для договора и юридически значимой переписки.
-            </p>
-          </div>
-        </header>
-
-        <dl className="mt-6 divide-y divide-border/40 text-sm">
-          <Field label="Статус">
-            Самозанятый — плательщик налога на профессиональный доход (НПД)
-          </Field>
-          <Field label="ФИО">
-            <span className="inline-flex items-center gap-2">
-              <User className="size-4 text-muted-foreground" aria-hidden />
-              Абдулкадыров Ясин Дагаевич
-            </span>
-          </Field>
-          <Field label="ИНН">
-            <code className="font-mono text-base font-semibold tracking-wider text-foreground">
-              201302285050
-            </code>
-          </Field>
-          <Field label="Email">
-            <a href="mailto:ramzan.aliev.97@mail.ru" className="text-primary hover:underline">
-              ramzan.aliev.97@mail.ru
-            </a>
-          </Field>
-          <Field label="Телефон">
-            <a href="tel:+79389944599" className="text-primary hover:underline">
-              +7 (938) 994-45-99
-            </a>
-          </Field>
-          <Field label="Сайт">
-            <a href="https://artumacademy.ru" className="text-primary hover:underline">
-              artumacademy.ru
-            </a>
-          </Field>
-        </dl>
-
-        <p className="mt-6 text-xs text-muted-foreground">
-          Чек по 54-ФЗ за каждую покупку формирует приложение «Мой налог» и
-          направляется на email Покупателя.
+        <p className="mt-6 text-center text-sm text-muted-foreground">
+          Реквизиты Исполнителя —{' '}
+          <Link href="/requisites" className="text-primary transition-colors hover:underline">
+            на отдельной странице
+          </Link>
+          .
         </p>
       </GlassCard>
-    </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-4">
-      <dt className="w-32 shrink-0 text-xs uppercase tracking-wider text-muted-foreground">
-        {label}
-      </dt>
-      <dd className="text-sm font-medium text-foreground">{children}</dd>
     </div>
   );
 }
