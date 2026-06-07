@@ -16,9 +16,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Logo } from '@/components/shared/Logo';
-import { MOCK_NOTIFICATIONS, MOCK_UNREAD_COUNT } from '@/lib/mock/user';
 import { signOutAction } from '@/server/actions/auth';
+import { markNotificationsReadAction } from '@/server/actions/notifications';
 import type { AuthUser } from '@/server/queries/auth';
+import type { NotificationRecord } from '@/server/queries/notifications';
 import { cn } from '@/lib/utils';
 
 /**
@@ -37,9 +38,10 @@ const NAV_ITEMS = [
 interface HeaderClientProps {
   className?: string;
   user: AuthUser | null;
+  notifications: NotificationRecord[];
 }
 
-export function HeaderClient({ className, user }: HeaderClientProps) {
+export function HeaderClient({ className, user, notifications }: HeaderClientProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
   const isGuest = !user;
@@ -113,7 +115,7 @@ export function HeaderClient({ className, user }: HeaderClientProps) {
             </>
           ) : (
             <>
-              <NotificationButton />
+              <NotificationButton notifications={notifications} />
               <UserMenu user={user} />
             </>
           )}
@@ -183,18 +185,32 @@ export function HeaderClient({ className, user }: HeaderClientProps) {
   );
 }
 
-function NotificationButton() {
+function NotificationButton({ notifications }: { notifications: NotificationRecord[] }) {
+  const [items, setItems] = useState(notifications);
+  const [, startTransition] = useTransition();
+  const unread = items.filter((n) => !n.read).length;
+
+  function onOpenChange(open: boolean) {
+    if (open && unread > 0) {
+      // оптимистично гасим бейдж + помечаем прочитанными на сервере
+      setItems((prev) => prev.map((n) => ({ ...n, read: true })));
+      startTransition(() => {
+        void markNotificationsReadAction();
+      });
+    }
+  }
+
   return (
-    <DropdownMenu>
+    <DropdownMenu onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
           size="icon"
-          aria-label={`Уведомления (${MOCK_UNREAD_COUNT} непрочитанных)`}
+          aria-label={`Уведомления (${unread} непрочитанных)`}
           className="relative size-9 rounded-full hover:bg-secondary/60"
         >
           <Bell className="size-4" aria-hidden />
-          {MOCK_UNREAD_COUNT > 0 ? (
+          {unread > 0 ? (
             <span
               aria-hidden
               className="absolute right-1.5 top-1.5 inline-flex size-2 rounded-full bg-primary ring-2 ring-background"
@@ -205,23 +221,41 @@ function NotificationButton() {
       <DropdownMenuContent align="end" className="w-80">
         <DropdownMenuLabel>Уведомления</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <ul className="max-h-80 overflow-y-auto py-1 text-sm">
-          {MOCK_NOTIFICATIONS.map((n) => (
-            <li key={n.id} className="border-b border-border/50 px-3 py-2 last:border-0">
-              <div className="flex items-start justify-between gap-2">
-                <div className="font-medium text-foreground">{n.title}</div>
-                {n.unread ? (
-                  <span aria-hidden className="mt-1 size-1.5 shrink-0 rounded-full bg-primary" />
-                ) : null}
-              </div>
-              <div className="mt-0.5 text-muted-foreground">{n.body}</div>
-              <div className="mt-1 text-xs text-muted-foreground/80">{n.ago}</div>
-            </li>
-          ))}
-        </ul>
+        {items.length === 0 ? (
+          <div className="px-3 py-8 text-center text-sm text-muted-foreground">
+            Пока нет уведомлений
+          </div>
+        ) : (
+          <ul className="max-h-80 overflow-y-auto py-1 text-sm">
+            {items.map((n) => (
+              <li key={n.id} className="border-b border-border/50 px-3 py-2 last:border-0">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="font-medium text-foreground">{n.title}</div>
+                  {!n.read ? (
+                    <span aria-hidden className="mt-1 size-1.5 shrink-0 rounded-full bg-primary" />
+                  ) : null}
+                </div>
+                {n.body ? <div className="mt-0.5 text-muted-foreground">{n.body}</div> : null}
+                <div className="mt-1 text-xs text-muted-foreground/80">{formatAgo(n.createdAt)}</div>
+              </li>
+            ))}
+          </ul>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
+}
+
+function formatAgo(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const min = Math.floor(diffMs / 60000);
+  if (min < 1) return 'только что';
+  if (min < 60) return `${min} мин назад`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `${h} ч назад`;
+  const d = Math.floor(h / 24);
+  if (d < 30) return `${d} дн назад`;
+  return new Date(iso).toLocaleDateString('ru-RU');
 }
 
 function UserMenu({ user }: { user: AuthUser }) {

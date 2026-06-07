@@ -5,6 +5,7 @@ import { z } from 'zod';
 
 import { decideLessonAccess } from '@/lib/access/lesson-access';
 import { auditLog } from '@/lib/audit-log';
+import { notify } from '@/server/notifications';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getCurrentUser } from '@/server/queries/auth';
 import { getMyActiveSubscription } from '@/server/queries/commerce';
@@ -216,6 +217,12 @@ export async function buyCourseAction(
       promocode: promocode ?? null,
       method: 'card',
     },
+  });
+
+  await notify(auth.userId, {
+    type: 'purchase',
+    title: 'Курс куплен',
+    body: 'Доступ открыт — начните обучение в личном кабинете.',
   });
 
   revalidatePath('/');
@@ -441,6 +448,12 @@ export async function buySubscriptionAction(
       period,
       expires_at: expiresAt.toISOString(),
     },
+  });
+
+  await notify(auth.userId, {
+    type: 'subscription',
+    title: 'Подписка оформлена',
+    body: 'Доступ ко всем курсам открыт.',
   });
 
   revalidatePath('/');

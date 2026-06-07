@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
 import { auditLog } from '@/lib/audit-log';
+import { notify } from '@/server/notifications';
 import { getClientIp } from '@/lib/headers/client-ip';
 import { rateLimit } from '@/lib/rate-limit';
 import { createServerSupabase } from '@/lib/supabase/server';
@@ -68,6 +69,11 @@ export async function signUpAction(input: {
       entityType: 'user',
       entityId: data.user.id,
       meta: { email: parsed.data.email },
+    });
+    await notify(data.user.id, {
+      type: 'welcome',
+      title: 'Добро пожаловать в Artum Academy 🎉',
+      body: 'Загляните в каталог и начните первый курс.',
     });
   }
 
