@@ -15,6 +15,21 @@ const DEFAULT_TITLE = 'Artum Academy — онлайн-курсы по AI, фот
 const DEFAULT_DESCRIPTION =
   'Образовательная платформа с курсами по нейросетям, фотографии, видеосъёмке, монтажу, дизайну, визуалу и копирайтингу. Учитесь у профессионалов в любом темпе.';
 
+const ORG_JSONLD = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: SITE_NAME,
+  url: SITE_URL,
+  logo: `${SITE_URL}/icon-512.png`,
+  sameAs: ['https://t.me/artum_academy', 'https://vk.com/artum_academy'],
+};
+const SITE_JSONLD = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: SITE_NAME,
+  url: SITE_URL,
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
@@ -88,6 +103,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ru" className={`${inter.variable} dark`} suppressHydrationWarning>
       <body className="min-h-screen font-sans text-foreground antialiased">
         <CosmicBackground />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify([ORG_JSONLD, SITE_JSONLD]) }}
+        />
         {children}
         <CookieConsent />
         <Toaster position="top-right" theme="dark" richColors />

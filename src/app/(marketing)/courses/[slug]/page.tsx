@@ -59,16 +59,32 @@ export default async function CoursePage({ params }: CoursePageProps) {
 
   const hasCertificate = certificates.some((c) => c.courseSlug === course.slug);
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ?? 'https://artumacademy.ru';
+  const courseJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Course',
+    name: course.title,
+    description: course.shortDescription || course.longDescription || course.title,
+    provider: { '@type': 'Organization', name: 'Artum Academy', url: siteUrl },
+    url: `${siteUrl}/courses/${course.slug}`,
+  };
+
   return (
-    <CoursePageClient
-      course={course}
-      similar={similar}
-      isLoggedIn={!!user}
-      purchasedSlugs={Array.from(purchasedSlugs)}
-      completedLessonIds={Array.from(completedLessonIds)}
-      wishlistSlugs={Array.from(wishlistSlugs)}
-      hasCertificate={hasCertificate}
-      hasActiveSubscription={!!activeSubscription}
-    />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(courseJsonLd) }}
+      />
+      <CoursePageClient
+        course={course}
+        similar={similar}
+        isLoggedIn={!!user}
+        purchasedSlugs={Array.from(purchasedSlugs)}
+        completedLessonIds={Array.from(completedLessonIds)}
+        wishlistSlugs={Array.from(wishlistSlugs)}
+        hasCertificate={hasCertificate}
+        hasActiveSubscription={!!activeSubscription}
+      />
+    </>
   );
 }
