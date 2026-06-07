@@ -25,11 +25,16 @@
 
 import * as Sentry from '@sentry/nextjs';
 
+// Не инициализируем Sentry с заглушечным DSN (напр. stub@sentry.example) —
+// иначе на каждой странице падает запрос к несуществующему хосту + ошибка в консоли.
+const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
+const enabled = !!dsn && !dsn.includes('sentry.example') && !dsn.includes('stub');
+
 Sentry.init({
-  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  dsn: enabled ? dsn : undefined,
   tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
   environment: process.env.NODE_ENV,
-  enabled: !!process.env.NEXT_PUBLIC_SENTRY_DSN,
+  enabled,
   // Avoid noise + Sanctions-affected SaaS replay dependency — capture errors only.
   replaysOnErrorSampleRate: 0,
   replaysSessionSampleRate: 0,

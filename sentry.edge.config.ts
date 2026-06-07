@@ -16,9 +16,13 @@
 
 import * as Sentry from '@sentry/nextjs';
 
+// Не инициализируем Sentry с заглушечным DSN (напр. stub@sentry.example).
+const dsn = process.env.SENTRY_DSN;
+const enabled = !!dsn && !dsn.includes('sentry.example') && !dsn.includes('stub');
+
 Sentry.init({
-  dsn: process.env.SENTRY_DSN,
+  dsn: enabled ? dsn : undefined,
   tracesSampleRate: 1.0,
   environment: process.env.NODE_ENV,
-  enabled: !!process.env.SENTRY_DSN,
+  enabled,
 });

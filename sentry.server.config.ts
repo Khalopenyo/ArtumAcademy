@@ -26,11 +26,15 @@
 
 import * as Sentry from '@sentry/nextjs';
 
+// Не инициализируем Sentry с заглушечным DSN (напр. stub@sentry.example).
+const dsn = process.env.SENTRY_DSN;
+const enabled = !!dsn && !dsn.includes('sentry.example') && !dsn.includes('stub');
+
 Sentry.init({
-  dsn: process.env.SENTRY_DSN,
+  dsn: enabled ? dsn : undefined,
   tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
   environment: process.env.NODE_ENV,
-  enabled: !!process.env.SENTRY_DSN,
+  enabled,
   beforeSend(event) {
     // Strip cookies/auth from breadcrumbs (defense in depth — pino already redacts).
     if (event.request?.headers) {
