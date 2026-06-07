@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { createAdminClient } from '@/lib/supabase/admin';
 import { createServerSupabase } from '@/lib/supabase/server';
 
 /**
@@ -362,4 +363,51 @@ export async function getMyCertificates(): Promise<CertificateRecord[]> {
       issuedAt: r.issued_at,
     }))
     .filter((r): r is CertificateRecord => r.courseSlug !== null) as CertificateRecord[];
+}
+
+// ────────────────────────────────────────────────────────────────────
+// ПУБЛИЧНАЯ ПРОВЕРКА СЕРТИФИКАТА (по номеру)
+// ────────────────────────────────────────────────────────────────────
+
+export interface CertificateVerification {
+  verificationNumber: string;
+  studentName: string;
+  courseTitle: string;
+  issuedAt: string;
+}
+
+/**
+ * Поиск сертификата по verification_number для публичной проверки (/verify/[number]).
+ * Через admin (обход RLS) — проверяющий анонимный. Номер неугадываем, отдаём
+ * только безопасные поля (имя, курс, дата).
+ */
+export async function verifyCertificateByNumber(
+  number: string,
+): Promise<CertificateVerification | null> {
+  const clean = number.trim();
+  if (!clean) return null;
+
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from('certificates')
+    .select('verification_number, student_name, issued_at, courses:course_id ( title )')
+    .eq('verification_number', clean)
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  const row = data as {
+    verification_number: string;
+    student_name: string;
+    issued_at: string;
+    courses: { title: string }[] | { title: string } | null;
+  };
+  const courseTitle = Array.isArray(row.courses) ? row.courses[0]?.title : row.courses?.title;
+
+  return {
+    verificationNumber: row.verification_number,
+    studentName: row.student_name,
+    courseTitle: courseTitle ?? 'Курс',
+    issuedAt: row.issued_at,
+  };
 }
