@@ -77,7 +77,7 @@ export function Footer({ className }: FooterProps) {
           <h4 className="mb-2.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
             Контакты
           </h4>
-          <p className="text-[11px] text-primary">ramzan.aliev.97@mail.ru</p>
+          <p className="text-[11px] text-primary">support@artumacademy.ru</p>
           <p className="mt-1 text-[11px] text-muted-foreground/70">+7 (938) 994-45-99</p>
         </div>
       </div>

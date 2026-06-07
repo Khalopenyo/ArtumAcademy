@@ -96,8 +96,8 @@ export default function OfertaPage() {
           </ul>
           <p>
             Запрос направляется на{' '}
-            <a href="mailto:ramzan.aliev.97@mail.ru" className="text-primary hover:underline">
-              ramzan.aliev.97@mail.ru
+            <a href="mailto:support@artumacademy.ru" className="text-primary hover:underline">
+              support@artumacademy.ru
             </a>
             . Возврат — на ту же карту в течение 10 банковских дней.
           </p>
@@ -136,7 +136,7 @@ export default function OfertaPage() {
             <li>Статус: Самозанятый (НПД)</li>
             <li>ФИО: Абдулкадыров Ясин Дагаевич</li>
             <li>ИНН: 201302285050</li>
-            <li>Email: ramzan.aliev.97@mail.ru</li>
+            <li>Email: support@artumacademy.ru</li>
             <li>Телефон: +7 (938) 994-45-99</li>
             <li>
               Полные реквизиты:{' '}

@@ -45,8 +45,8 @@ export default function RequisitesPage() {
             </code>
           </Field>
           <Field label="Email">
-            <a href="mailto:ramzan.aliev.97@mail.ru" className="text-primary hover:underline">
-              ramzan.aliev.97@mail.ru
+            <a href="mailto:support@artumacademy.ru" className="text-primary hover:underline">
+              support@artumacademy.ru
             </a>
           </Field>
           <Field label="Телефон">

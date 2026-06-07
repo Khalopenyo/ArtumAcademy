@@ -33,8 +33,8 @@ export default function ContactsPage() {
           <ContactRow
             icon={<Mail className="size-5" aria-hidden />}
             label="Email"
-            value="ramzan.aliev.97@mail.ru"
-            href="mailto:ramzan.aliev.97@mail.ru"
+            value="support@artumacademy.ru"
+            href="mailto:support@artumacademy.ru"
           />
           <ContactRow
             icon={<Phone className="size-5" aria-hidden />}
