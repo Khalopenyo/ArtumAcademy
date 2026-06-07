@@ -66,10 +66,8 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  icons: {
-    icon: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
-  },
+  // Иконки берутся из file-convention: src/app/icon.svg + src/app/apple-icon.png
+  // (Next сам генерирует <link rel="icon"> / apple-touch-icon).
   manifest: '/manifest.json',
 };
 

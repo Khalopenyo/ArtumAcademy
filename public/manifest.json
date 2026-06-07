@@ -1,11 +1,11 @@
 {
-  "name": "VideoEdit Academy",
-  "short_name": "VEAcademy",
-  "description": "Онлайн-платформа курсов по монтажу видео",
+  "name": "Artum Academy",
+  "short_name": "Artum",
+  "description": "Онлайн-курсы по AI, фото, видео, монтажу, дизайну и копирайтингу",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "background_color": "#06040F",
+  "theme_color": "#06040F",
   "icons": [
     {
       "src": "/icon-192.png",
