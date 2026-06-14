@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { toast } from 'sonner';
@@ -17,7 +17,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Logo } from '@/components/shared/Logo';
 import { signOutAction } from '@/server/actions/auth';
-import { markNotificationsReadAction } from '@/server/actions/notifications';
+import {
+  fetchMyNotificationsAction,
+  markNotificationsReadAction,
+} from '@/server/actions/notifications';
 import type { AuthUser } from '@/server/queries/auth';
 import type { NotificationRecord } from '@/server/queries/notifications';
 import { cn } from '@/lib/utils';
@@ -189,6 +192,29 @@ function NotificationButton({ notifications }: { notifications: NotificationReco
   const [items, setItems] = useState(notifications);
   const [, startTransition] = useTransition();
   const unread = items.filter((n) => !n.read).length;
+
+  // Live-обновление: тянем свежие уведомления каждые 30с и при возврате фокуса
+  // на вкладку. Не затираем список при пустом ответе (уведомления не удаляются,
+  // пустой ответ = транзиентная ошибка), чтобы избежать мигания.
+  useEffect(() => {
+    let active = true;
+    async function refresh() {
+      try {
+        const fresh = await fetchMyNotificationsAction();
+        if (active && fresh.length) setItems(fresh);
+      } catch {
+        /* ignore — повторим на следующем тике */
+      }
+    }
+    const id = setInterval(refresh, 30_000);
+    const onFocus = () => void refresh();
+    window.addEventListener('focus', onFocus);
+    return () => {
+      active = false;
+      clearInterval(id);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, []);
 
   function onOpenChange(open: boolean) {
     if (open && unread > 0) {

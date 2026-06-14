@@ -103,6 +103,79 @@ export async function getAllPaymentsForRevenueChart(
 }
 
 // ────────────────────────────────────────────────────────────────────
+// PAYMENTS / ORDERS LIST
+// ────────────────────────────────────────────────────────────────────
+
+export interface AdminPaymentRow {
+  id: string;
+  userEmail: string;
+  courseTitle: string | null;
+  amountMinor: number;
+  status: 'pending' | 'succeeded' | 'canceled' | 'refunded';
+  method: 'card' | 'sbp' | 'subscription';
+  promocode: string | null;
+  providerPaymentId: string | null;
+  paidAt: string;
+}
+
+/**
+ * Список платежей/заказов для админки (новые сверху). Резолвит email
+ * пользователя (Auth Admin API) и название курса.
+ */
+export async function getAdminPayments(limit = 200): Promise<AdminPaymentRow[]> {
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from('payments')
+    .select(
+      'id, user_id, course_id, amount_minor, status, method, promocode, provider_payment_id, paid_at',
+    )
+    .order('paid_at', { ascending: false })
+    .limit(limit);
+  if (error) {
+    console.error('[admin.getAdminPayments]', error);
+    return [];
+  }
+
+  type Row = {
+    id: string;
+    user_id: string;
+    course_id: string | null;
+    amount_minor: number;
+    status: AdminPaymentRow['status'];
+    method: AdminPaymentRow['method'];
+    promocode: string | null;
+    provider_payment_id: string | null;
+    paid_at: string;
+  };
+  const rows = (data ?? []) as Row[];
+
+  const courseIds = [...new Set(rows.map((r) => r.course_id).filter((x): x is string => !!x))];
+  const titleById = new Map<string, string>();
+  if (courseIds.length) {
+    const { data: courses } = await admin.from('courses').select('id, title').in('id', courseIds);
+    for (const c of (courses ?? []) as Array<{ id: string; title: string }>) {
+      titleById.set(c.id, c.title);
+    }
+  }
+
+  const { data: authData } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  const emailById = new Map<string, string>();
+  for (const u of authData.users) emailById.set(u.id, u.email ?? '');
+
+  return rows.map((r) => ({
+    id: r.id,
+    userEmail: emailById.get(r.user_id) ?? '—',
+    courseTitle: r.course_id ? (titleById.get(r.course_id) ?? '—') : null,
+    amountMinor: r.amount_minor,
+    status: r.status,
+    method: r.method,
+    promocode: r.promocode,
+    providerPaymentId: r.provider_payment_id,
+    paidAt: r.paid_at,
+  }));
+}
+
+// ────────────────────────────────────────────────────────────────────
 // USERS LIST
 // ────────────────────────────────────────────────────────────────────
 
@@ -114,6 +187,8 @@ export interface AdminUserRow {
   isAdmin: boolean;
   registeredAt: string;
   purchasesCount: number;
+  /** Slugs курсов, к которым у юзера есть доступ (для отзыва из админки). */
+  purchasedCourseSlugs: string[];
   certificatesCount: number;
   completedLessonsCount: number;
   hasActiveSubscription: boolean;
@@ -147,8 +222,8 @@ export async function getAdminUsersList(): Promise<AdminUserRow[]> {
   }
 
   // Агрегаты — параллельно
-  const [purchasesRes, certsRes, lessonsDoneRes, subsRes] = await Promise.all([
-    admin.from('purchases').select('user_id'),
+  const [purchasesRes, certsRes, lessonsDoneRes, subsRes, coursesRes] = await Promise.all([
+    admin.from('purchases').select('user_id, course_id'),
     admin.from('certificates').select('user_id'),
     admin.from('lesson_progress').select('user_id'),
     admin
@@ -156,9 +231,22 @@ export async function getAdminUsersList(): Promise<AdminUserRow[]> {
       .select('user_id')
       .eq('cancelled', false)
       .gt('expires_at', new Date().toISOString()),
+    admin.from('courses').select('id, slug'),
   ]);
 
-  const purchasesByUser = countBy(purchasesRes.data ?? [], 'user_id');
+  const slugById = new Map<string, string>();
+  for (const c of (coursesRes.data ?? []) as Array<{ id: string; slug: string }>) {
+    slugById.set(c.id, c.slug);
+  }
+  const slugsByUser = new Map<string, string[]>();
+  for (const p of (purchasesRes.data ?? []) as Array<{ user_id: string; course_id: string }>) {
+    const slug = slugById.get(p.course_id);
+    if (!slug) continue;
+    const arr = slugsByUser.get(p.user_id) ?? [];
+    arr.push(slug);
+    slugsByUser.set(p.user_id, arr);
+  }
+
   const certsByUser = countBy(certsRes.data ?? [], 'user_id');
   const lessonsByUser = countBy(lessonsDoneRes.data ?? [], 'user_id');
   const activeSubUsers = new Set(
@@ -180,7 +268,8 @@ export async function getAdminUsersList(): Promise<AdminUserRow[]> {
     initials: p.initials,
     isAdmin: p.is_admin,
     registeredAt: p.registered_at,
-    purchasesCount: purchasesByUser.get(p.id) ?? 0,
+    purchasesCount: (slugsByUser.get(p.id) ?? []).length,
+    purchasedCourseSlugs: slugsByUser.get(p.id) ?? [],
     certificatesCount: certsByUser.get(p.id) ?? 0,
     completedLessonsCount: lessonsByUser.get(p.id) ?? 0,
     hasActiveSubscription: activeSubUsers.has(p.id),

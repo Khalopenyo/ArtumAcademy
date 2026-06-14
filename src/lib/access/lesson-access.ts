@@ -12,7 +12,13 @@ export interface LessonAccessFlags {
   lessonExists: boolean;
   isPreview: boolean;
   isAdmin: boolean;
-  hasActiveSubscription: boolean;
+  /**
+   * Покрывает ли активная подписка пользователя ИМЕННО ЭТОТ курс.
+   * (план «Все курсы» → всегда true; кураторский план → курс в замороженном
+   * наборе подписки). НЕ просто «есть подписка» — иначе подписчик одного
+   * набора получил бы доступ ко всему каталогу.
+   */
+  subscriptionCoversCourse: boolean;
   hasPurchase: boolean;
 }
 
@@ -25,11 +31,11 @@ export interface AccessDecision {
 
 /**
  * Доступ к уроку есть, если урок — preview, либо пользователь admin,
- * либо активна подписка, либо курс куплен.
+ * либо подписка покрывает этот курс, либо курс куплен.
  */
 export function decideLessonAccess(f: LessonAccessFlags): AccessDecision {
   if (!f.lessonExists) return { allowed: false, reason: 'not_found' };
-  if (f.isPreview || f.isAdmin || f.hasActiveSubscription || f.hasPurchase) {
+  if (f.isPreview || f.isAdmin || f.subscriptionCoversCourse || f.hasPurchase) {
     return { allowed: true, reason: 'ok' };
   }
   return { allowed: false, reason: 'denied' };

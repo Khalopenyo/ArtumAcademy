@@ -76,7 +76,7 @@ export default function EditCoursePageClient({ course }: EditCoursePageClientPro
     const durStr = prompt('Длительность в минутах', '10');
     const minutes = parseInt(durStr ?? '10', 10);
     const videoUrl = prompt(
-      'URL видео (mp4 / YouTube). Пусто = добавить позже:',
+      'Видео: Kinescope ID или kinescope.io-ссылка (рекоменд.), либо прямой mp4-URL. Пусто = позже:',
       '',
     );
     const moduleObj = course.modules.find((m) => m.id === moduleId);

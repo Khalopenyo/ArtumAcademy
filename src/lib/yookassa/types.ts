@@ -17,6 +17,16 @@ export interface CreatePaymentInput {
   metadata: Record<string, string>;
   /** Ключ идемпотентности (= наш payment_id) — защита от двойного списания. */
   idempotenceKey: string;
+  /**
+   * Данные для чека 54-ФЗ. Если заданы — ЮKassa сформирует и отправит
+   * покупателю фискальный чек (нужна включённая фискализация в ЛК ЮKassa).
+   */
+  receipt?: {
+    /** Email покупателя — на него уйдёт чек. */
+    customerEmail: string;
+    /** Название позиции (курс), ≤128 символов. */
+    itemDescription: string;
+  };
 }
 
 export interface CreatedPayment {

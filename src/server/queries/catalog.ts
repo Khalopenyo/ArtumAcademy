@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { createAdminClient } from '@/lib/supabase/admin';
 import { createServerSupabase } from '@/lib/supabase/server';
 import type { CategoryId, Course, Module, Lesson } from '@/lib/mock/courses';
 
@@ -24,6 +25,7 @@ interface CourseRow {
   students_count: number;
   price_minor: number;
   cover_gradient: string;
+  cover_url: string | null;
   published: boolean;
   order_index: number;
 }
@@ -42,6 +44,7 @@ interface LessonRow {
   title: string;
   duration_sec: number;
   video_url: string | null;
+  content: string | null;
   preview: boolean;
   order_index: number;
 }
@@ -61,6 +64,8 @@ function rowToCourse(row: CourseRow, modules: Module[] = []): Course {
     studentsCount: row.students_count,
     priceMinor: row.price_minor,
     coverGradient: row.cover_gradient,
+    coverUrl: row.cover_url,
+    published: row.published,
     modules,
     // Legacy mock-fields — больше не используются для real auth,
     // но интерфейс Course требует их (определены в mock/courses.ts).
@@ -78,6 +83,7 @@ function rowToLesson(row: LessonRow): Lesson {
     completed: false, // вычисляется отдельно из user-specific state
     preview: row.preview,
     videoUrl: row.video_url,
+    content: row.content,
   };
 }
 
@@ -170,7 +176,7 @@ export async function getCourseBySlugFromDb(slug: string): Promise<Course | null
   type CourseWithNested = CourseRow & {
     modules: Array<ModuleRow & { lessons: LessonRow[] }>;
   };
-  const row = data as CourseWithNested;
+  const row = data as unknown as CourseWithNested;
 
   const modules: Module[] = row.modules
     .sort((a, b) => a.order_index - b.order_index)
@@ -183,5 +189,58 @@ export async function getCourseBySlugFromDb(slug: string): Promise<Course | null
       ),
     );
 
+  return rowToCourse(row, modules);
+}
+
+/**
+ * Админ: ВСЕ курсы (включая черновики) — для админ-списка.
+ * service_role (мимо RLS), т.к. RLS отдаёт только published=true.
+ */
+export async function getAllCoursesForAdmin(): Promise<Course[]> {
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from('courses')
+    .select('*')
+    .order('order_index', { ascending: true });
+  if (error) {
+    console.error('[catalog.getAllCoursesForAdmin] error:', error);
+    return [];
+  }
+  return (data as CourseRow[]).map((r) => rowToCourse(r));
+}
+
+/**
+ * Админ: курс по slug с модулями/уроками, ВКЛЮЧАЯ черновики. service_role.
+ */
+export async function getCourseBySlugForAdmin(slug: string): Promise<Course | null> {
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from('courses')
+    .select(
+      `
+      *,
+      modules:modules (
+        *,
+        lessons:lessons ( * )
+      )
+      `,
+    )
+    .eq('slug', slug)
+    .single();
+
+  if (error || !data) return null;
+
+  type CourseWithNested = CourseRow & {
+    modules: Array<ModuleRow & { lessons: LessonRow[] }>;
+  };
+  const row = data as unknown as CourseWithNested;
+  const modules: Module[] = row.modules
+    .sort((a, b) => a.order_index - b.order_index)
+    .map((m) =>
+      rowToModule(
+        m,
+        m.lessons.sort((a, b) => a.order_index - b.order_index).map(rowToLesson),
+      ),
+    );
   return rowToCourse(row, modules);
 }

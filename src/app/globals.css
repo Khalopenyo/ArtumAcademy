@@ -92,3 +92,67 @@
     @apply ring-2 ring-primary/60 ring-offset-2 ring-offset-background -translate-y-0.5;
   }
 }
+
+/* Анимация звёзд космического фона: мягкое мерцание + лёгкий 2D-дрейф.
+   Базовая прозрачность — через --star-o, сдвиг — через --drift-x / --drift-y. */
+@keyframes starTwinkle {
+  0%,
+  100% {
+    opacity: var(--star-o, 0.5);
+  }
+  50% {
+    opacity: calc(var(--star-o, 0.5) * 0.28);
+  }
+}
+@keyframes starDrift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(var(--drift-x, 0px), var(--drift-y, 0px), 0);
+  }
+}
+
+/* Пролетающие кометы: тонкий светящийся след, по диагонали через экран.
+   Видимы лишь короткое окно цикла → пролетают изредка, не сыплются. */
+.cosmic-comet {
+  position: absolute;
+  left: -12vw;
+  width: 140px;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(196, 168, 255, 0) 0%, rgba(196, 168, 255, 0.65) 72%, #fff 100%);
+  box-shadow: 0 0 7px 1px rgba(196, 168, 255, 0.6);
+  opacity: 0;
+  animation-name: cometFly;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+@keyframes cometFly {
+  0% {
+    transform: translate(0, 0) rotate(20deg);
+    opacity: 0;
+  }
+  3% {
+    opacity: 1;
+  }
+  17% {
+    opacity: 1;
+  }
+  21%,
+  100% {
+    transform: translate(122vw, 92vh) rotate(20deg);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cosmic-star {
+    animation: none !important;
+    opacity: var(--star-o, 0.5) !important;
+  }
+  .cosmic-comet {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+}

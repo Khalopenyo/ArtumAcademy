@@ -2,6 +2,8 @@
 
 import { jsPDF } from 'jspdf';
 
+import { PT_SANS_BOLD_B64, PT_SANS_REGULAR_B64 } from './fonts/pt-sans';
+
 /**
  * Минимальный shape сертификата для PDF — namespace-agnostic
  * (работает и со StoredCertificate из старого store, и с CertificateRecord
@@ -43,6 +45,12 @@ export function generateCertificatePdf({
     format: 'a4',
   });
 
+  // Встроенный helvetica не умеет кириллицу → подключаем PT Sans (сабсет).
+  doc.addFileToVFS('PTSans-Regular.ttf', PT_SANS_REGULAR_B64);
+  doc.addFont('PTSans-Regular.ttf', 'PTSans', 'normal');
+  doc.addFileToVFS('PTSans-Bold.ttf', PT_SANS_BOLD_B64);
+  doc.addFont('PTSans-Bold.ttf', 'PTSans', 'bold');
+
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
 
@@ -59,22 +67,22 @@ export function generateCertificatePdf({
 
   // Brand — ARTUM Academy
   doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('PTSans', 'bold');
   doc.setFontSize(20);
   doc.text('ARTUM', W / 2 - 12, 32, { align: 'right' });
   doc.setTextColor(200, 132, 252); // светло-фиолетовый
-  doc.setFont('helvetica', 'normal');
+  doc.setFont('PTSans', 'normal');
   doc.text('Academy', W / 2 - 8, 32);
 
   // Заголовок «СЕРТИФИКАТ»
   doc.setTextColor(168, 85, 247);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('PTSans', 'bold');
   doc.setFontSize(52);
   doc.text('СЕРТИФИКАТ', W / 2, 70, { align: 'center' });
 
   // Подзаголовок
   doc.setTextColor(156, 163, 175); // muted-foreground
-  doc.setFont('helvetica', 'normal');
+  doc.setFont('PTSans', 'normal');
   doc.setFontSize(13);
   doc.text('О ПРОХОЖДЕНИИ КУРСА', W / 2, 82, { align: 'center' });
 
@@ -90,7 +98,7 @@ export function generateCertificatePdf({
 
   // Имя студента
   doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('PTSans', 'bold');
   doc.setFontSize(32);
   doc.text(studentName, W / 2, 122, { align: 'center' });
 
@@ -102,13 +110,13 @@ export function generateCertificatePdf({
 
   // «успешно завершил курс»
   doc.setTextColor(200, 200, 210);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont('PTSans', 'normal');
   doc.setFontSize(13);
   doc.text('успешно завершил(а) курс', W / 2, 138, { align: 'center' });
 
   // Название курса
   doc.setTextColor(168, 85, 247);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('PTSans', 'bold');
   doc.setFontSize(22);
   // Multi-line wrap if too long
   const titleLines = doc.splitTextToSize(`«${courseTitle}»`, W - 60);
@@ -126,7 +134,7 @@ export function generateCertificatePdf({
   });
 
   doc.setTextColor(156, 163, 175);
-  doc.setFont('helvetica', 'normal');
+  doc.setFont('PTSans', 'normal');
   doc.setFontSize(11);
   doc.text(`Дата выдачи: ${issueDate}`, 30, H - 25);
   doc.text(`Номер: ${certificate.verificationNumber}`, W - 30, H - 25, { align: 'right' });

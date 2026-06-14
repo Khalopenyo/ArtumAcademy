@@ -101,11 +101,7 @@ export async function hasAccessToCourse(courseSlug: string): Promise<boolean> {
     .single();
   if (profile?.is_admin) return true;
 
-  // 2) Active subscription
-  const sub = await getMyActiveSubscription();
-  if (sub) return true;
-
-  // 3) Explicit purchase
+  // Курс по slug — нужен и для подписки-набора, и для проверки покупки
   const { data: course } = await supabase
     .from('courses')
     .select('id')
@@ -113,6 +109,20 @@ export async function hasAccessToCourse(courseSlug: string): Promise<boolean> {
     .single();
   if (!course) return false;
 
+  // 2) Подписка — доступ ТОЛЬКО если она покрывает именно этот курс
+  const sub = await getMyActiveSubscription();
+  if (sub) {
+    if (sub.isAllCourses) return true; // план «Все курсы» → весь каталог
+    const { data: covered } = await supabase
+      .from('subscription_courses')
+      .select('course_id')
+      .eq('subscription_id', sub.id)
+      .eq('course_id', course.id)
+      .maybeSingle();
+    if (covered) return true;
+  }
+
+  // 3) Явная покупка
   const { data: purchase } = await supabase
     .from('purchases')
     .select('user_id')
@@ -191,6 +201,9 @@ export async function getMyPayments(): Promise<PaymentRecord[]> {
 export interface SubscriptionRecord {
   id: string;
   tier: 'all_courses';
+  planId: string | null;
+  /** Снимок на момент покупки: true = доступ ко всему каталогу (живой). */
+  isAllCourses: boolean;
   startedAt: string;
   expiresAt: string;
   amountMinor: number;
@@ -221,12 +234,54 @@ export async function getMyActiveSubscription(): Promise<SubscriptionRecord | nu
   return {
     id: data.id,
     tier: data.tier,
+    planId: data.plan_id,
+    isAllCourses: data.is_all_courses,
     startedAt: data.started_at,
     expiresAt: data.expires_at,
     amountMinor: data.amount_minor,
     period: data.period,
     cancelled: data.cancelled,
   };
+}
+
+/**
+ * Slug'и курсов, к которым даёт доступ активная подписка пользователя:
+ *   • план «Все курсы» → все курсы каталога (живой доступ);
+ *   • кураторский план → замороженный набор подписки (subscription_courses).
+ * Пусто, если активной подписки нет. Используется в UI (что показывать доступным).
+ */
+export async function getMySubscribedCourseSlugs(): Promise<Set<string>> {
+  const sub = await getMyActiveSubscription();
+  if (!sub) return new Set();
+  const supabase = createServerSupabase();
+
+  if (sub.isAllCourses) {
+    const { data, error } = await supabase.from('courses').select('slug');
+    if (error) {
+      console.error('[commerce.getMySubscribedCourseSlugs/all]', error);
+      return new Set();
+    }
+    return new Set((data as { slug: string }[]).map((r) => r.slug));
+  }
+
+  const { data, error } = await supabase
+    .from('subscription_courses')
+    .select('courses:course_id ( slug )')
+    .eq('subscription_id', sub.id);
+  if (error) {
+    console.error('[commerce.getMySubscribedCourseSlugs/set]', error);
+    return new Set();
+  }
+  type Row = { courses: { slug: string }[] | { slug: string } | null };
+  return new Set(
+    (data as unknown as Row[])
+      .map((r) => {
+        if (!r.courses) return null;
+        if (Array.isArray(r.courses)) return r.courses[0]?.slug ?? null;
+        return r.courses.slug;
+      })
+      .filter((s): s is string => !!s),
+  );
 }
 
 // ────────────────────────────────────────────────────────────────────

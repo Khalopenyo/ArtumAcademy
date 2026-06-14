@@ -41,9 +41,11 @@ export function SubscribeClient({ isLoggedIn, activeSubscription }: SubscribeCli
         toast.error(res.error);
         return;
       }
-      toast.success(
-        period === 'monthly' ? 'Подписка на 30 дней оформлена!' : 'Годовая подписка оформлена!',
-      );
+      // Редирект на оплату ЮKassa — подписка активируется вебхуком после оплаты.
+      if (res.data?.confirmationUrl) {
+        window.location.href = res.data.confirmationUrl;
+        return;
+      }
       router.push('/');
     });
   }
@@ -144,6 +146,11 @@ export function SubscribeClient({ isLoggedIn, activeSubscription }: SubscribeCli
           highlight
         />
       </section>
+
+      <p className="mx-auto mt-6 flex max-w-2xl items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
+        <ShieldCheck className="size-3.5 text-emerald-500/80" aria-hidden />
+        Безопасная оплата через ЮKassa · чек по 54-ФЗ · отмена в любой момент
+      </p>
 
       {/* Альтернатива — купить курсы по-отдельности */}
       <section className="mx-auto mt-10 max-w-2xl text-center">

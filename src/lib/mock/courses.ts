@@ -69,6 +69,8 @@ export interface Lesson {
    * Mux/Kinescope.
    */
   videoUrl: string | null;
+  /** HTML-контент урока (текст + картинки), санитизированный. null = нет. */
+  content?: string | null;
 }
 
 export interface Module {
@@ -91,6 +93,10 @@ export interface Course {
   priceMinor: number;
   /** Гладиент для placeholder обложки (когда нет реального cover) */
   coverGradient: string;
+  /** URL медиа-обложки (картинка / GIF / видео). null = показываем градиент. */
+  coverUrl?: string | null;
+  /** Опубликован ли курс (виден в каталоге). false = черновик. */
+  published?: boolean;
   modules: Module[];
   /** Является ли курс купленным текущим пользователем (mock) */
   purchased: boolean;

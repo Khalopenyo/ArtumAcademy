@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { BookOpen, Percent, ShieldCheck, Users } from 'lucide-react';
+import { BookOpen, CreditCard, Layers, Percent, ShieldCheck, Sparkles, Users } from 'lucide-react';
 
 import { RevenueChart } from '@/components/artum/RevenueChart';
 import { requireAdmin } from '@/server/queries/auth';
@@ -64,16 +64,34 @@ export default async function AdminHomePage() {
           description="CRUD курсов, модулей и уроков. Drag-drop сортировка."
         />
         <QuickLink
+          href="/admin/cases"
+          icon={<Sparkles className="size-6" aria-hidden />}
+          title="Кейсы"
+          description="Истории студентов и проекты для публичной страницы /cases."
+        />
+        <QuickLink
           href="/admin/users"
           icon={<Users className="size-6" aria-hidden />}
           title="Пользователи"
           description="Список зарегистрированных + поиск + прогресс."
         />
         <QuickLink
+          href="/admin/subscription-plans"
+          icon={<Layers className="size-6" aria-hidden />}
+          title="Планы подписки"
+          description="Наборы курсов по подписке: цена за месяц/год, состав, публикация."
+        />
+        <QuickLink
           href="/admin/promocodes"
           icon={<Percent className="size-6" aria-hidden />}
           title="Промокоды"
           description="Скидки в процентах или рублях, лимиты использований, срок действия."
+        />
+        <QuickLink
+          href="/admin/payments"
+          icon={<CreditCard className="size-6" aria-hidden />}
+          title="Платежи"
+          description="Заказы и транзакции ЮKassa, статусы, возвраты."
         />
       </section>
     </div>

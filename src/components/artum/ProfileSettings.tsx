@@ -3,11 +3,12 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Settings, ShieldCheck } from 'lucide-react';
+import { Download, Settings, ShieldAlert, ShieldCheck, Trash2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { deleteAccountAction, exportMyDataAction } from '@/server/actions/account';
 import { updatePasswordAction, updateProfileAction } from '@/server/actions/auth';
 import type { AuthUser } from '@/server/queries/auth';
 
@@ -34,6 +35,147 @@ export function ProfileSettings({ user }: ProfileSettingsProps) {
         Изменения сохраняются в Supabase. При смене email Supabase отправит
         письмо подтверждения на новый адрес (когда SMTP будет настроен).
       </p>
+      <DangerZone user={user} />
+    </div>
+  );
+}
+
+/**
+ * 152-ФЗ: право на доступ к данным (выгрузка в JSON) и право на удаление
+ * аккаунта. Удаление необратимо → требует ввести слово-подтверждение.
+ */
+function DangerZone({ user }: { user: AuthUser }) {
+  const [pendingExport, startExport] = useTransition();
+  const [pendingDelete, startDelete] = useTransition();
+  const [confirming, setConfirming] = useState(false);
+  const [confirmText, setConfirmText] = useState('');
+
+  const CONFIRM_WORD = 'УДАЛИТЬ';
+  const confirmed = confirmText.trim().toUpperCase() === CONFIRM_WORD;
+
+  function onExport() {
+    startExport(async () => {
+      const res = await exportMyDataAction();
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      const blob = new Blob([res.data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'artum-academy-my-data.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success('Данные выгружены в файл');
+    });
+  }
+
+  function onDelete() {
+    if (!confirmed) return;
+    startDelete(async () => {
+      const res = await deleteAccountAction();
+      if (!res.ok) {
+        toast.error(res.error ?? 'Не удалось удалить аккаунт');
+        return;
+      }
+      toast.success('Аккаунт и все данные удалены');
+      // Жёсткий редирект: сессия аннулирована, сбрасываем весь клиентский стейт.
+      window.location.href = '/';
+    });
+  }
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-destructive/40 bg-destructive/5">
+      <div className="flex items-start gap-3 border-b border-destructive/30 p-5">
+        <div className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg bg-destructive/15 text-destructive">
+          <ShieldAlert className="size-5" aria-hidden />
+        </div>
+        <div>
+          <h3 className="text-base font-semibold">Управление данными</h3>
+          <p className="text-sm text-muted-foreground">
+            Ваши права по 152-ФЗ: выгрузка персональных данных и удаление аккаунта.
+          </p>
+        </div>
+      </div>
+      <div className="divide-y divide-destructive/20">
+        <div className="flex flex-wrap items-center justify-between gap-4 p-5">
+          <div className="space-y-1">
+            <div className="text-sm font-medium">Скачать мои данные</div>
+            <div className="max-w-md text-sm text-muted-foreground">
+              Профиль, покупки, платежи, сертификаты, прогресс и согласия — одним
+              JSON-файлом.
+            </div>
+          </div>
+          <Button variant="outline" size="sm" onClick={onExport} disabled={pendingExport}>
+            <Download className="mr-2 size-4" aria-hidden />
+            {pendingExport ? 'Готовим…' : 'Скачать'}
+          </Button>
+        </div>
+
+        <div className="space-y-3 p-5">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="text-sm font-medium text-destructive">Удалить аккаунт</div>
+              <div className="max-w-md text-sm text-muted-foreground">
+                Безвозвратно удалит профиль <span className="text-foreground">{user.email}</span>,
+                доступы к курсам, сертификаты и историю. Действие нельзя отменить.
+              </div>
+            </div>
+            {!confirming ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => setConfirming(true)}
+              >
+                <Trash2 className="mr-2 size-4" aria-hidden />
+                Удалить
+              </Button>
+            ) : null}
+          </div>
+
+          {confirming ? (
+            <div className="max-w-md space-y-3 rounded-xl border border-destructive/30 bg-background/40 p-4">
+              <Label htmlFor="confirm-delete" className="text-xs">
+                Для подтверждения введите{' '}
+                <span className="font-semibold text-destructive">{CONFIRM_WORD}</span>
+              </Label>
+              <Input
+                id="confirm-delete"
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                disabled={pendingDelete}
+                autoComplete="off"
+                placeholder={CONFIRM_WORD}
+              />
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setConfirming(false);
+                    setConfirmText('');
+                  }}
+                  disabled={pendingDelete}
+                >
+                  Отмена
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={onDelete}
+                  disabled={pendingDelete || !confirmed}
+                >
+                  {pendingDelete ? 'Удаляем…' : 'Удалить навсегда'}
+                </Button>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }

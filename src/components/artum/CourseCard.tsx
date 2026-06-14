@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowRight, Clock, Play, Users, Video } from 'lucide-react';
 
+import { CourseCover } from '@/components/artum/CourseCover';
 import { WishlistButton } from '@/components/artum/WishlistButton';
 import {
   type CategoryId,
@@ -68,10 +69,7 @@ export function CourseCard({
     >
       {/* Thumbnail */}
       <div className="relative h-32 overflow-hidden sm:h-36">
-        <div
-          aria-hidden
-          className={cn('absolute inset-0 bg-gradient-to-br', course.coverGradient)}
-        />
+        <CourseCover coverUrl={course.coverUrl} gradient={course.coverGradient} />
         {/* Тёмный градиент снизу для читаемости тегов */}
         <div
           aria-hidden

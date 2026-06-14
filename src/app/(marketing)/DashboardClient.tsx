@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useMemo, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { RefreshCw, Search, X } from 'lucide-react';
 
 import { CategoryPill } from '@/components/artum/CategoryPill';
@@ -53,11 +53,11 @@ function DashboardInner({
   certificatesCount,
   hasActiveSubscription,
 }: DashboardClientProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const activeCategory = parseCategoryParam(searchParams.get('category'));
-  const initialQuery = searchParams.get('q') ?? '';
-  const [query, setQuery] = useState(initialQuery);
+  const [activeCategory, setActiveCategory] = useState(
+    parseCategoryParam(searchParams.get('category')),
+  );
+  const [query, setQuery] = useState(searchParams.get('q') ?? '');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const purchasedSet = useMemo(() => new Set(purchasedSlugs), [purchasedSlugs]);
@@ -85,17 +85,26 @@ function DashboardInner({
   const visibleCourses = filteredCourses.slice(0, visibleCount);
   const hasMore = filteredCourses.length > visibleCount;
 
+  // Синхронизируем URL без навигации/перезапроса страницы — фильтр мгновенный,
+  // а ссылка остаётся шарящейся (на свежей загрузке стейт берётся из searchParams).
+  function syncUrl(category: CategoryId | 'all', q: string) {
+    const params = new URLSearchParams();
+    if (category !== 'all') params.set('category', category);
+    if (q.trim()) params.set('q', q.trim());
+    const qs = params.toString();
+    window.history.replaceState(null, '', qs ? `/?${qs}` : '/');
+  }
+
+  function selectCategory(cat: CategoryId | 'all') {
+    setActiveCategory(cat);
+    setVisibleCount(PAGE_SIZE);
+    syncUrl(cat, query);
+  }
+
   function applyQuery(next: string) {
     setQuery(next);
     setVisibleCount(PAGE_SIZE); // сбрасываем пагинацию при новом поиске
-    const params = new URLSearchParams(searchParams.toString());
-    if (next.trim()) {
-      params.set('q', next.trim());
-    } else {
-      params.delete('q');
-    }
-    const qs = params.toString();
-    router.replace(qs ? `/?${qs}` : '/', { scroll: false });
+    syncUrl(activeCategory, next);
   }
 
   function courseProgressPercent(course: Course): number {
@@ -143,7 +152,12 @@ function DashboardInner({
       {/* Фильтры */}
       <section id="catalog" className="mb-5 mt-7 scroll-mt-20">
         <nav aria-label="Категории курсов" className="flex flex-wrap gap-2">
-          <CategoryPill categoryId="all" label="Все курсы" active={activeCategory === 'all'} />
+          <CategoryPill
+            categoryId="all"
+            label="Все курсы"
+            active={activeCategory === 'all'}
+            onSelect={selectCategory}
+          />
           {CATEGORIES.map((cat) => (
             <CategoryPill
               key={cat.id}
@@ -151,6 +165,7 @@ function DashboardInner({
               label={cat.label}
               emoji={cat.emoji}
               active={activeCategory === cat.id}
+              onSelect={selectCategory}
             />
           ))}
         </nav>

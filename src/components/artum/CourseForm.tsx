@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { CourseCover } from '@/components/artum/CourseCover';
 import {
   type CategoryId,
   type Course,
@@ -57,6 +58,35 @@ export function CourseForm({ initial }: CourseFormProps) {
   const [coverGradient, setCoverGradient] = useState(
     initial?.coverGradient ?? GRADIENTS[0]!.value,
   );
+  const [published, setPublished] = useState(initial?.published ?? true);
+  const [coverUrl, setCoverUrl] = useState<string | null>(initial?.coverUrl ?? null);
+  const [uploadingCover, setUploadingCover] = useState(false);
+
+  function pickCover() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*,video/mp4,video/webm';
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      setUploadingCover(true);
+      const fd = new FormData();
+      fd.append('file', file);
+      fetch('/api/admin/course-covers', { method: 'POST', body: fd })
+        .then((r) => r.json())
+        .then((j) => {
+          if (j?.ok && j.url) {
+            setCoverUrl(j.url as string);
+            toast.success('Обложка загружена');
+          } else {
+            toast.error(j?.error ?? 'Не удалось загрузить обложку');
+          }
+        })
+        .catch(() => toast.error('Сеть прервалась при загрузке'))
+        .finally(() => setUploadingCover(false));
+    };
+    input.click();
+  }
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -80,6 +110,8 @@ export function CourseForm({ initial }: CourseFormProps) {
           category,
           priceMinor,
           coverGradient,
+          coverUrl,
+          published,
         });
         if (!res.ok) {
           toast.error(res.error);
@@ -101,7 +133,8 @@ export function CourseForm({ initial }: CourseFormProps) {
         studentsCount: 0,
         priceMinor,
         coverGradient,
-        published: true,
+        coverUrl,
+        published,
         orderIndex: 100,
       });
       if (!res.ok) {
@@ -155,7 +188,7 @@ export function CourseForm({ initial }: CourseFormProps) {
             placeholder="midjourney-basics"
             required
             disabled={editing}
-            pattern="[a-z0-9-]+"
+            pattern="[-a-z0-9]+"
           />
           {editing ? (
             <p className="text-xs text-muted-foreground">Slug нельзя менять</p>
@@ -217,6 +250,54 @@ export function CourseForm({ initial }: CourseFormProps) {
             required
           />
         </div>
+      </div>
+
+      <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3">
+        <input
+          type="checkbox"
+          checked={published}
+          onChange={(e) => setPublished(e.target.checked)}
+          className="size-4 accent-primary"
+        />
+        <span className="text-sm">
+          Опубликован{' '}
+          <span className="text-muted-foreground">
+            — виден в каталоге. Снимите галочку, чтобы сохранить как черновик.
+          </span>
+        </span>
+      </label>
+
+      <div className="space-y-2">
+        <Label>Обложка курса (картинка / GIF / видео)</Label>
+        <div className="flex items-center gap-3">
+          <div className="relative h-20 w-36 shrink-0 overflow-hidden rounded-lg border border-border">
+            <CourseCover coverUrl={coverUrl} gradient={coverGradient} />
+          </div>
+          <div className="flex flex-col items-start gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={pickCover}
+              disabled={uploadingCover}
+            >
+              {uploadingCover ? 'Загрузка…' : coverUrl ? 'Заменить обложку' : 'Загрузить обложку'}
+            </Button>
+            {coverUrl ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setCoverUrl(null)}
+              >
+                Убрать (вернуть градиент)
+              </Button>
+            ) : null}
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          16:9, ~1280×720. Гифки/видео — до 25 МБ. Без обложки показывается градиент ниже.
+        </p>
       </div>
 
       <div className="space-y-2">

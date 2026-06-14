@@ -53,7 +53,7 @@ function findLessonContext(course: Course, lessonId: string): LessonContext | nu
 }
 
 export default async function LessonPage({ params }: LessonPageProps) {
-  await requireUser(`/learn/${params.courseSlug}/${params.lessonId}`);
+  const user = await requireUser(`/learn/${params.courseSlug}/${params.lessonId}`);
 
   const course = await getCourseBySlugFromDb(params.courseSlug);
   if (!course) {
@@ -113,6 +113,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
       ctx={ctx}
       completedLessonIds={Array.from(completedLessonIds)}
       startPositionSec={startPositionSec}
+      watermarkText={user.email}
     />
   );
 }

@@ -9,13 +9,16 @@ const CSP = [
   "object-src 'none'",
   "frame-ancestors 'none'",
   "form-action 'self'",
-  "script-src 'self' 'unsafe-inline' https://smartcaptcha.yandexcloud.net",
+  // Kinescope-плеер грузит iframe-API скрипт с kinescope.io/latest/iframe и
+  // встраивает iframe kinescope.io/embed — нужен и bare-домен, и *.kinescope.io.
+  "script-src 'self' 'unsafe-inline' https://smartcaptcha.yandexcloud.net https://kinescope.io https://*.kinescope.io",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://smartcaptcha.yandexcloud.net https://*.kinescope.io",
-  "frame-src 'self' https://smartcaptcha.yandexcloud.net https://*.kinescope.io",
-  "media-src 'self' blob: https://*.kinescope.io",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://smartcaptcha.yandexcloud.net https://kinescope.io https://*.kinescope.io https://*.kinescopecdn.net",
+  // frame-src: Kinescope (уроки) + видеохостинги для встроенных кейсов (RuTube/YouTube/VK/Vimeo)
+  "frame-src 'self' https://smartcaptcha.yandexcloud.net https://kinescope.io https://*.kinescope.io https://rutube.ru https://*.rutube.ru https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://vk.com https://*.vk.com https://vkvideo.ru",
+  "media-src 'self' blob: https://kinescope.io https://*.kinescope.io https://*.kinescopecdn.net",
 ].join('; ');
 
 /** @type {import('next').NextConfig} */

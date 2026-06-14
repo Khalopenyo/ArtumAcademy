@@ -99,12 +99,19 @@ export default function AdminCoursesClient({ initialCourses }: AdminCoursesClien
               return (
                 <tr key={c.id} className="hover:bg-secondary/50">
                   <td className="px-5 py-3">
-                    <Link
-                      href={`/courses/${c.slug}`}
-                      className="font-medium transition-colors hover:text-primary"
-                    >
-                      {c.title}
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/courses/${c.slug}`}
+                        className="font-medium transition-colors hover:text-primary"
+                      >
+                        {c.title}
+                      </Link>
+                      {c.published === false ? (
+                        <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-500">
+                          Черновик
+                        </span>
+                      ) : null}
+                    </div>
                     <div className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
                       {c.shortDescription}
                     </div>

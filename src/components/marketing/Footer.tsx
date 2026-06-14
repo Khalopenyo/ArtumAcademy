@@ -52,24 +52,26 @@ export function Footer({ className }: FooterProps) {
 
         {/* Главная */}
         <FooterColumn title="Главная">
-          <FooterLink href="/">Все курсы</FooterLink>
-          <FooterLink href="/?category=ai">Нейросети</FooterLink>
-          <FooterLink href="/?category=photo">Фотография</FooterLink>
-          <FooterLink href="/?category=video">Видео</FooterLink>
+          <FooterLink href="/about">О платформе</FooterLink>
+          <FooterLink href="/blog">Блог / Новости</FooterLink>
+          <FooterLink href="/contacts">Контакты</FooterLink>
+          <FooterLink href="/faq">FAQ</FooterLink>
         </FooterColumn>
 
         {/* Курсы */}
         <FooterColumn title="Курсы">
+          <FooterLink href="/?category=ai">Нейросети</FooterLink>
           <FooterLink href="/?category=editing">Монтаж</FooterLink>
           <FooterLink href="/?category=design">Дизайн</FooterLink>
           <FooterLink href="/?category=visual">Визуал</FooterLink>
           <FooterLink href="/?category=copy">Копирайтинг</FooterLink>
+          <FooterLink href="/?category=photo">Фотография</FooterLink>
+          <FooterLink href="/?category=video">Видео</FooterLink>
         </FooterColumn>
 
         {/* Кейсы */}
         <FooterColumn title="Кейсы">
-          <FooterLink href="/cases">Наши проекты</FooterLink>
-          <FooterLink href="/cases#reviews">Отзывы</FooterLink>
+          <FooterLink href="/cases">Кейсы студентов</FooterLink>
         </FooterColumn>
 
         {/* Контакты */}

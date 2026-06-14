@@ -5,8 +5,10 @@ import { z } from 'zod';
 
 import { decideLessonAccess } from '@/lib/access/lesson-access';
 import { auditLog } from '@/lib/audit-log';
+import { logger } from '@/lib/logger';
 import { notify } from '@/server/notifications';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { createPayment, yookassaConfigured } from '@/lib/yookassa/client';
 import { getCurrentUser } from '@/server/queries/auth';
 import { getMyActiveSubscription } from '@/server/queries/commerce';
 
@@ -63,7 +65,7 @@ async function assertLessonAccess(userId: string, lessonId: string): Promise<Act
     admin.from('profiles').select('is_admin').eq('id', userId).maybeSingle(),
     admin
       .from('subscriptions')
-      .select('id')
+      .select('id, is_all_courses')
       .eq('user_id', userId)
       .eq('cancelled', false)
       .gt('expires_at', new Date().toISOString())
@@ -77,11 +79,28 @@ async function assertLessonAccess(userId: string, lessonId: string): Promise<Act
       .maybeSingle(),
   ]);
 
+  // Покрывает ли подписка ИМЕННО этот курс (план «всё» → да; иначе курс в наборе)
+  let subscriptionCoversCourse = false;
+  const subRow = sub as { id: string; is_all_courses: boolean } | null;
+  if (subRow) {
+    if (subRow.is_all_courses) {
+      subscriptionCoversCourse = true;
+    } else {
+      const { data: covered } = await admin
+        .from('subscription_courses')
+        .select('course_id')
+        .eq('subscription_id', subRow.id)
+        .eq('course_id', courseId)
+        .maybeSingle();
+      subscriptionCoversCourse = !!covered;
+    }
+  }
+
   const decision = decideLessonAccess({
     lessonExists: true,
     isPreview: false,
     isAdmin: (profile as { is_admin?: boolean } | null)?.is_admin === true,
-    hasActiveSubscription: !!sub,
+    subscriptionCoversCourse,
     hasPurchase: !!purchase,
   });
   return decision.allowed ? { ok: true } : { ok: false, error: 'Нет доступа к этому курсу' };
@@ -97,47 +116,120 @@ const SUBSCRIPTION_PRICES = {
 // BUY COURSE
 // ────────────────────────────────────────────────────────────────────
 
-interface BuyCourseResult {
-  discountMinor: number;
-  amountMinor: number;
+interface CheckoutResult {
+  /** URL ЮKassa для редиректа (или нашей return-страницы при 100%-промокоде). */
+  confirmationUrl: string;
+}
+
+/** База сайта для return_url (резолвится по окружению). */
+function siteBaseUrl(): string {
+  return process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ?? 'https://artumacademy.ru';
 }
 
 /**
- * Создаёт purchase + payment атомарно (без транзакции — purchase write
- * после payment.id ready; FK NULL-safe). Применяет промокод если задан.
- *
- * Mock-режим: всегда mark succeeded. Реальный ЮKassa flow — позже (отдельный action).
+ * Создаёт pending-payment и платёж в ЮKassa; возвращает confirmation_url
+ * для редиректа. Доступ НЕ выдаётся здесь — только вебхуком после оплаты.
+ */
+async function startCheckout(opts: {
+  userId: string;
+  userEmail: string;
+  amountMinor: number;
+  discountMinor: number;
+  promocode: string | null;
+  method: 'card' | 'subscription';
+  courseId: string | null;
+  description: string;
+  kind: 'course' | 'subscription';
+  plan?: 'monthly' | 'yearly';
+}): Promise<ActionResult<CheckoutResult>> {
+  const admin = createAdminClient();
+
+  const { data: payment, error } = await admin
+    .from('payments')
+    .insert({
+      user_id: opts.userId,
+      course_id: opts.courseId,
+      amount_minor: opts.amountMinor,
+      method: opts.method,
+      status: 'pending',
+      provider: 'yookassa',
+      discount_minor: opts.discountMinor,
+      promocode: opts.promocode,
+    })
+    .select('id')
+    .single();
+  if (error || !payment) {
+    return { ok: false, error: error?.message ?? 'Ошибка создания платежа' };
+  }
+
+  const returnUrl = `${siteBaseUrl()}/payment/return?p=${payment.id}`;
+  try {
+    const created = await createPayment({
+      amountMinor: opts.amountMinor,
+      description: opts.description,
+      returnUrl,
+      metadata: {
+        paymentId: payment.id,
+        userId: opts.userId,
+        kind: opts.kind,
+        ...(opts.courseId ? { courseId: opts.courseId } : {}),
+        ...(opts.plan ? { plan: opts.plan } : {}),
+      },
+      idempotenceKey: payment.id,
+      receipt: { customerEmail: opts.userEmail, itemDescription: opts.description },
+    });
+    if (!created.confirmationUrl) {
+      await admin.from('payments').update({ status: 'canceled' }).eq('id', payment.id);
+      return { ok: false, error: 'ЮKassa не вернула ссылку на оплату' };
+    }
+    await admin
+      .from('payments')
+      .update({ provider_payment_id: created.id, confirmation_url: created.confirmationUrl })
+      .eq('id', payment.id);
+    return { ok: true, data: { confirmationUrl: created.confirmationUrl } };
+  } catch (err) {
+    await admin.from('payments').update({ status: 'canceled' }).eq('id', payment.id);
+    logger.error({ err, paymentId: payment.id }, 'startCheckout: createPayment failed');
+    return { ok: false, error: 'Не удалось создать платёж. Попробуйте позже.' };
+  }
+}
+
+/**
+ * Покупка курса через ЮKassa. Возвращает confirmation_url — клиент редиректит
+ * на оплату. Доступ открывается вебхуком после успешной оплаты. Промокод
+ * проверяется здесь, но списывается только при подтверждении (в fulfillment).
  */
 export async function buyCourseAction(
   courseSlug: string,
   promocode?: string,
-): Promise<ActionResult<BuyCourseResult>> {
-  const auth = await getOrFail();
-  if (!auth.ok) return auth;
+): Promise<ActionResult<CheckoutResult>> {
+  const user = await getCurrentUser();
+  if (!user) return { ok: false, error: 'Сначала войдите в аккаунт' };
+  if (!yookassaConfigured()) {
+    return { ok: false, error: 'Приём оплаты временно недоступен. Попробуйте позже.' };
+  }
 
   const admin = createAdminClient();
 
-  // 1. Найти курс
-  const { data: course, error: courseError } = await admin
+  const { data: course } = await admin
     .from('courses')
-    .select('id, price_minor')
+    .select('id, title, price_minor')
     .eq('slug', courseSlug)
     .single();
-  if (courseError || !course) return { ok: false, error: 'Курс не найден' };
+  if (!course) return { ok: false, error: 'Курс не найден' };
 
-  // 2. Проверить — не куплен ли уже
   const { data: existing } = await admin
     .from('purchases')
     .select('user_id')
-    .eq('user_id', auth.userId)
+    .eq('user_id', user.id)
     .eq('course_id', course.id)
     .maybeSingle();
   if (existing) return { ok: false, error: 'Курс уже куплен' };
 
-  // 3. Применить промокод если есть
+  // Промокод — только валидация + расчёт скидки (списываем при оплате).
   let discountMinor = 0;
-  let promoIdToDecrement: string | null = null;
-  if (promocode) {
+  let appliedPromo: string | null = null;
+  if (promocode?.trim()) {
     const code = promocode.trim().toUpperCase();
     const { data: promo } = await admin
       .from('promocodes')
@@ -155,80 +247,65 @@ export async function buyCourseAction(
       promo.type === 'percent'
         ? Math.round((course.price_minor * promo.value) / 100)
         : Math.min(promo.value, course.price_minor);
-    promoIdToDecrement = promo.id;
+    appliedPromo = code;
   }
   const amountMinor = Math.max(0, course.price_minor - discountMinor);
 
-  // 4. Создать payment
-  const { data: payment, error: paymentError } = await admin
-    .from('payments')
-    .insert({
-      user_id: auth.userId,
-      course_id: course.id,
-      amount_minor: amountMinor,
-      method: 'card',
-      status: 'succeeded',
-    })
-    .select('id')
-    .single();
-  if (paymentError || !payment) {
-    return { ok: false, error: paymentError?.message ?? 'Ошибка создания платежа' };
-  }
-
-  // 5. Создать purchase
-  const { error: purchaseError } = await admin.from('purchases').insert({
-    user_id: auth.userId,
-    course_id: course.id,
-    amount_minor: amountMinor,
-    discount_minor: discountMinor,
-    payment_id: payment.id,
-  });
-  if (purchaseError) {
-    // Откатить payment вручную — атомарность через 2 insert'а
-    await admin.from('payments').delete().eq('id', payment.id);
-    return { ok: false, error: purchaseError.message };
-  }
-
-  // 6. Декрементировать uses_left промокода
-  if (promoIdToDecrement) {
-    const { data: promoNow } = await admin
-      .from('promocodes')
-      .select('uses_left')
-      .eq('id', promoIdToDecrement)
+  // 100%-промокод (0 ₽) — ЮKassa не принимает нулевой платёж, выдаём напрямую.
+  if (amountMinor === 0) {
+    const { data: payment } = await admin
+      .from('payments')
+      .insert({
+        user_id: user.id,
+        course_id: course.id,
+        amount_minor: 0,
+        method: 'card',
+        status: 'succeeded',
+        provider: 'promo',
+        discount_minor: discountMinor,
+        promocode: appliedPromo,
+      })
+      .select('id')
       .single();
-    if (promoNow?.uses_left !== null && promoNow?.uses_left !== undefined) {
-      await admin
-        .from('promocodes')
-        .update({ uses_left: Math.max(0, promoNow.uses_left - 1) })
-        .eq('id', promoIdToDecrement);
+    await admin.from('purchases').insert({
+      user_id: user.id,
+      course_id: course.id,
+      amount_minor: 0,
+      discount_minor: discountMinor,
+      payment_id: payment?.id ?? null,
+    });
+    if (appliedPromo) {
+      try {
+        await admin.rpc('decrement_promocode' as never, { p_code: appliedPromo } as never);
+      } catch {
+        /* не критично */
+      }
     }
+    await auditLog({
+      userId: user.id,
+      action: 'payment.succeeded',
+      entityType: 'payment',
+      entityId: payment?.id,
+      meta: { course_id: course.id, amount_minor: 0, discount_minor: discountMinor, promocode: appliedPromo, provider: 'promo' },
+    });
+    await notify(user.id, { type: 'purchase', title: 'Курс открыт', body: 'Промокод применён — доступ открыт.' });
+    revalidatePath('/');
+    revalidatePath('/profile');
+    revalidatePath(`/courses/${courseSlug}`);
+    return { ok: true, data: { confirmationUrl: `${siteBaseUrl()}/payment/return?p=${payment?.id}` } };
   }
 
-  // Audit — компла-критично: log платежа для отчётов + 54-ФЗ трейл
-  await auditLog({
-    userId: auth.userId,
-    action: 'payment.succeeded',
-    entityType: 'payment',
-    entityId: payment.id,
-    meta: {
-      course_slug: courseSlug,
-      amount_minor: amountMinor,
-      discount_minor: discountMinor,
-      promocode: promocode ?? null,
-      method: 'card',
-    },
+  return startCheckout({
+    userId: user.id,
+    userEmail: user.email,
+    amountMinor,
+    discountMinor,
+    promocode: appliedPromo,
+    method: 'card',
+    courseId: course.id,
+    description: `Курс: ${course.title}`,
+    kind: 'course',
   });
-
-  await notify(auth.userId, {
-    type: 'purchase',
-    title: 'Курс куплен',
-    body: 'Доступ открыт — начните обучение в личном кабинете.',
-  });
-
-  revalidatePath('/');
-  revalidatePath('/profile');
-  revalidatePath(`/courses/${courseSlug}`);
-  return { ok: true, data: { discountMinor, amountMinor } };
 }
 
 // ────────────────────────────────────────────────────────────────────
@@ -388,77 +465,39 @@ export async function toggleWishlistAction(courseSlug: string): Promise<ActionRe
 // SUBSCRIPTION
 // ────────────────────────────────────────────────────────────────────
 
+/**
+ * Оформление подписки через ЮKassa. Возвращает confirmation_url для редиректа;
+ * подписка активируется вебхуком после успешной оплаты.
+ */
 export async function buySubscriptionAction(
   period: 'monthly' | 'yearly',
-): Promise<ActionResult> {
-  const auth = await getOrFail();
-  if (!auth.ok) return auth;
+): Promise<ActionResult<CheckoutResult>> {
+  const user = await getCurrentUser();
+  if (!user) return { ok: false, error: 'Сначала войдите в аккаунт' };
 
   if (period !== 'monthly' && period !== 'yearly') {
     return { ok: false, error: 'Невалидный период подписки' };
+  }
+  if (!yookassaConfigured()) {
+    return { ok: false, error: 'Приём оплаты временно недоступен. Попробуйте позже.' };
   }
 
   const active = await getMyActiveSubscription();
   if (active) return { ok: false, error: 'У вас уже есть активная подписка' };
 
-  const admin = createAdminClient();
-  const now = new Date();
-  const days = period === 'monthly' ? 30 : 365;
-  const expiresAt = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
-  const amountMinor = SUBSCRIPTION_PRICES[period];
-
-  // 1. payment
-  const { data: payment, error: paymentError } = await admin
-    .from('payments')
-    .insert({
-      user_id: auth.userId,
-      course_id: null,
-      amount_minor: amountMinor,
-      method: 'subscription',
-      status: 'succeeded',
-    })
-    .select('id')
-    .single();
-  if (paymentError || !payment) {
-    return { ok: false, error: paymentError?.message ?? 'Ошибка создания платежа' };
-  }
-
-  // 2. subscription
-  const { error: subError } = await admin.from('subscriptions').insert({
-    user_id: auth.userId,
-    tier: 'all_courses',
-    started_at: now.toISOString(),
-    expires_at: expiresAt.toISOString(),
-    amount_minor: amountMinor,
-    period,
-    cancelled: false,
+  return startCheckout({
+    userId: user.id,
+    userEmail: user.email,
+    amountMinor: SUBSCRIPTION_PRICES[period],
+    discountMinor: 0,
+    promocode: null,
+    method: 'subscription',
+    courseId: null,
+    description:
+      period === 'monthly' ? 'Подписка Artum Academy: 1 месяц' : 'Подписка Artum Academy: 1 год',
+    kind: 'subscription',
+    plan: period,
   });
-  if (subError) {
-    await admin.from('payments').delete().eq('id', payment.id);
-    return { ok: false, error: subError.message };
-  }
-
-  await auditLog({
-    userId: auth.userId,
-    action: 'subscription.purchased',
-    entityType: 'payment',
-    entityId: payment.id,
-    meta: {
-      amount_minor: amountMinor,
-      period,
-      expires_at: expiresAt.toISOString(),
-    },
-  });
-
-  await notify(auth.userId, {
-    type: 'subscription',
-    title: 'Подписка оформлена',
-    body: 'Доступ ко всем курсам открыт.',
-  });
-
-  revalidatePath('/');
-  revalidatePath('/profile');
-  return { ok: true };
 }
 
 export async function cancelSubscriptionAction(): Promise<ActionResult> {

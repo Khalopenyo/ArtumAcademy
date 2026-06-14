@@ -4,11 +4,12 @@ import { useMemo, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Check, ChevronLeft, Lock, Play, Tag, Users, X } from 'lucide-react';
+import { Check, ChevronLeft, Lock, Play, ShieldCheck, Tag, Users, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CourseCard } from '@/components/artum/CourseCard';
+import { CourseCover } from '@/components/artum/CourseCover';
 import { WishlistButton } from '@/components/artum/WishlistButton';
 import { GlassCard } from '@/components/shared/GlassCard';
 import {
@@ -93,12 +94,13 @@ export default function CoursePageClient({
         toast.error(res.error);
         return;
       }
-      const discount = res.data?.discountMinor ?? 0;
-      const savedMsg =
-        discount > 0
-          ? ` (с промокодом — сэкономили ${(discount / 100).toLocaleString('ru-RU')} ₽)`
-          : '';
-      toast.success(`Курс «${course.title}» куплен${savedMsg}. Удачного обучения!`);
+      // Редирект на страницу оплаты ЮKassa (или нашу return-страницу при
+      // 100%-промокоде — доступ уже выдан). Доступ к платным курсам
+      // открывается вебхуком после успешной оплаты.
+      if (res.data?.confirmationUrl) {
+        window.location.href = res.data.confirmationUrl;
+        return;
+      }
       router.refresh();
     });
   }
@@ -151,13 +153,9 @@ export default function CoursePageClient({
         {/* Левая колонка — описание + уроки */}
         <div className="space-y-8 lg:col-span-2">
           <div className="overflow-hidden rounded-2xl border border-border/60">
-            <div
-              aria-hidden
-              className={cn(
-                'h-44 w-full bg-gradient-to-br opacity-90 sm:h-56',
-                course.coverGradient,
-              )}
-            />
+            <div className="relative h-44 w-full overflow-hidden sm:h-56">
+              <CourseCover coverUrl={course.coverUrl} gradient={course.coverGradient} />
+            </div>
             <div className="space-y-4 bg-card/70 p-6 backdrop-blur-xl sm:p-8">
               <div className="flex items-start justify-between gap-3">
                 <span
@@ -446,6 +444,13 @@ export default function CoursePageClient({
                 {ctaLabel}
               </Button>
             )}
+
+            {!purchased ? (
+              <p className="flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
+                <ShieldCheck className="size-3.5 text-emerald-500/80" aria-hidden />
+                Безопасная оплата через ЮKassa · чек и возврат по закону
+              </p>
+            ) : null}
 
             {!purchased ? (
               <Link

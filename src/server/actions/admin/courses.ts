@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import sanitizeHtml from 'sanitize-html';
 import { z } from 'zod';
 
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -37,6 +38,7 @@ const CourseSchema = z.object({
   studentsCount: z.number().int().min(0).default(0),
   priceMinor: z.number().int().min(0).default(0),
   coverGradient: z.string().default('from-purple-600 via-fuchsia-500 to-pink-500'),
+  coverUrl: z.string().nullable().optional(),
   published: z.boolean().default(true),
   orderIndex: z.number().int().default(100),
 });
@@ -65,6 +67,7 @@ export async function createCourseAction(
     students_count: parsed.data.studentsCount,
     price_minor: parsed.data.priceMinor,
     cover_gradient: parsed.data.coverGradient,
+    cover_url: parsed.data.coverUrl ?? null,
     published: parsed.data.published,
     order_index: parsed.data.orderIndex,
   });
@@ -92,6 +95,7 @@ export async function updateCourseAction(
   if (patch.studentsCount !== undefined) row.students_count = patch.studentsCount;
   if (patch.priceMinor !== undefined) row.price_minor = patch.priceMinor;
   if (patch.coverGradient !== undefined) row.cover_gradient = patch.coverGradient;
+  if (patch.coverUrl !== undefined) row.cover_url = patch.coverUrl;
   if (patch.published !== undefined) row.published = patch.published;
   if (patch.orderIndex !== undefined) row.order_index = patch.orderIndex;
   const { error } = await admin
@@ -170,11 +174,38 @@ export async function deleteModuleAction(
 
 // ─── LESSONS ────────────────────────────────────────────────────────
 
+/**
+ * Санитизация HTML урока (вывод TipTap) перед записью — XSS-защита (security §3).
+ * sanitize-html: чистый JS без jsdom (надёжен в server-бандле Next).
+ * Разрешаем только теги/атрибуты, которые реально выдаёт редактор.
+ */
+function sanitizeLessonHtml(html: string | null | undefined): string | null {
+  if (!html) return null;
+  const clean = sanitizeHtml(html, {
+    allowedTags: [
+      'p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'h2', 'h3', 'ul', 'ol', 'li',
+      'blockquote', 'a', 'img', 'code', 'pre',
+    ],
+    allowedAttributes: {
+      a: ['href', 'target', 'rel'],
+      img: ['src', 'alt'],
+    },
+    allowedSchemes: ['http', 'https', 'mailto'],
+    transformTags: {
+      a: sanitizeHtml.simpleTransform('a', { rel: 'noopener noreferrer nofollow', target: '_blank' }),
+    },
+  }).trim();
+  return clean.length ? clean : null;
+}
+
 const LessonInputSchema = z.object({
   moduleId: z.string().uuid(),
   title: z.string().min(1),
   durationSec: z.number().int().min(60),
-  videoUrl: z.string().url().nullable(),
+  // Видео НЕобязательно (бывают текстовые уроки). URL / Kinescope id / null —
+  // классификацией занимается parseLessonVideo() на стороне плеера.
+  videoUrl: z.string().min(1).nullable(),
+  content: z.string().nullable().optional(),
   preview: z.boolean().default(false),
   orderIndex: z.number().int().default(100),
 });
@@ -197,6 +228,7 @@ export async function createLessonAction(
       title: parsed.data.title,
       duration_sec: parsed.data.durationSec,
       video_url: parsed.data.videoUrl,
+      content: sanitizeLessonHtml(parsed.data.content),
       preview: parsed.data.preview,
       order_index: parsed.data.orderIndex,
     })
@@ -213,6 +245,7 @@ export async function updateLessonAction(
     title: string;
     durationSec: number;
     videoUrl: string | null;
+    content: string | null;
     preview: boolean;
     orderIndex: number;
   }>,
@@ -225,6 +258,7 @@ export async function updateLessonAction(
   if (patch.title !== undefined) row.title = patch.title;
   if (patch.durationSec !== undefined) row.duration_sec = patch.durationSec;
   if (patch.videoUrl !== undefined) row.video_url = patch.videoUrl;
+  if (patch.content !== undefined) row.content = sanitizeLessonHtml(patch.content);
   if (patch.preview !== undefined) row.preview = patch.preview;
   if (patch.orderIndex !== undefined) row.order_index = patch.orderIndex;
   const { error } = await admin

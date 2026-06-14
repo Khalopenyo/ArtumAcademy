@@ -1,20 +1,52 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
 import { auditLog } from '@/lib/audit-log';
 import { notify } from '@/server/notifications';
 import { getClientIp } from '@/lib/headers/client-ip';
+import { logger } from '@/lib/logger';
 import { rateLimit } from '@/lib/rate-limit';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { createServerSupabase } from '@/lib/supabase/server';
 import { getCurrentUser } from '@/server/queries/auth';
 
 type ActionResult = { ok: true } | { ok: false; error: string };
 
+/** Версия согласий 152-ФЗ/оферты — поднимать при изменении документов. */
+const POLICY_VERSION = '2026-06-09';
+
 function ipOrUnknown(): string {
   return getClientIp() ?? 'unknown';
+}
+
+/**
+ * Фиксирует согласия пользователя (152-ФЗ): обработка ПДн + оферта.
+ * Идемпотентно (UNIQUE user_id+purpose+version). Не прерывает регистрацию
+ * при сбое записи — логируем громко (согласие уже дано на сервере через schema).
+ */
+async function recordSignupConsents(userId: string): Promise<void> {
+  try {
+    const admin = createAdminClient();
+    const ip = getClientIp();
+    const userAgent = headers().get('user-agent');
+    const rows = (['pdn_processing', 'oferta'] as const).map((purpose) => ({
+      user_id: userId,
+      purpose,
+      policy_version: POLICY_VERSION,
+      ip,
+      user_agent: userAgent,
+    }));
+    const { error } = await admin
+      .from('user_consents')
+      .upsert(rows, { onConflict: 'user_id,purpose,policy_version', ignoreDuplicates: true });
+    if (error) logger.error({ err: error, userId }, 'recordSignupConsents failed');
+  } catch (err) {
+    logger.error({ err, userId }, 'recordSignupConsents crashed');
+  }
 }
 
 function rateLimitError(retryAfterSec: number): { ok: false; error: string } {
@@ -31,12 +63,17 @@ const SignUpSchema = z.object({
   name: z.string().min(1, 'Имя обязательно'),
   email: z.string().email('Некорректный email'),
   password: z.string().min(8, 'Пароль минимум 8 символов'),
+  // 152-ФЗ: согласие обязательно на сервере, а не только галочкой в UI.
+  agreed: z.literal(true, {
+    errorMap: () => ({ message: 'Нужно принять политику конфиденциальности и оферту' }),
+  }),
 });
 
 export async function signUpAction(input: {
   name: string;
   email: string;
   password: string;
+  agreed: boolean;
 }): Promise<{ ok: true; needsConfirmation: boolean } | { ok: false; error: string }> {
   const parsed = SignUpSchema.safeParse(input);
   if (!parsed.success) {
@@ -75,6 +112,8 @@ export async function signUpAction(input: {
       title: 'Добро пожаловать в Artum Academy 🎉',
       body: 'Загляните в каталог и начните первый курс.',
     });
+    // 152-ФЗ: фиксируем согласия (обработка ПДн + оферта) с версией/IP/UA.
+    await recordSignupConsents(data.user.id);
   }
 
   // Если включён "Confirm email" — сессии нет до подтверждения почты

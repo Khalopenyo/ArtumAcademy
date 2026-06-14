@@ -55,7 +55,7 @@ function RegisterInner() {
     setError(null);
     if (!canSubmit) return;
     startTransition(async () => {
-      const res = await signUpAction({ name, email, password });
+      const res = await signUpAction({ name, email, password, agreed });
       if (!res.ok) return setError(res.error);
       if (res.needsConfirmation) {
         setAwaitingCode(true);

@@ -6,7 +6,7 @@ const base = {
   lessonExists: true,
   isPreview: false,
   isAdmin: false,
-  hasActiveSubscription: false,
+  subscriptionCoversCourse: false,
   hasPurchase: false,
 };
 
@@ -28,8 +28,15 @@ describe('decideLessonAccess', () => {
   it('admin имеет доступ', () => {
     expect(decideLessonAccess({ ...base, isAdmin: true }).allowed).toBe(true);
   });
-  it('активная подписка даёт доступ', () => {
-    expect(decideLessonAccess({ ...base, hasActiveSubscription: true }).allowed).toBe(true);
+  it('подписка ПОКРЫВАЕТ этот курс → доступ', () => {
+    expect(decideLessonAccess({ ...base, subscriptionCoversCourse: true }).allowed).toBe(true);
+  });
+  it('ДЫРА ЗАКРЫТА: есть подписка, но курс НЕ в её наборе → denied', () => {
+    // subscriptionCoversCourse=false моделирует «подписан на другой план»
+    expect(decideLessonAccess({ ...base, subscriptionCoversCourse: false })).toEqual({
+      allowed: false,
+      reason: 'denied',
+    });
   });
   it('покупка курса даёт доступ', () => {
     expect(decideLessonAccess({ ...base, hasPurchase: true }).allowed).toBe(true);

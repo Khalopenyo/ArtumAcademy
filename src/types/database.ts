@@ -70,6 +70,51 @@ export interface Database {
         };
         Relationships: [];
       };
+      cases: {
+        Row: {
+          id: string;
+          title: string;
+          student_name: string;
+          description: string;
+          result: string;
+          category: string;
+          cover_url: string | null;
+          video_url: string | null;
+          published: boolean;
+          order_index: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          student_name?: string;
+          description?: string;
+          result?: string;
+          category: string;
+          cover_url?: string | null;
+          video_url?: string | null;
+          published?: boolean;
+          order_index?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          student_name?: string;
+          description?: string;
+          result?: string;
+          category?: string;
+          cover_url?: string | null;
+          video_url?: string | null;
+          published?: boolean;
+          order_index?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       audit_log: {
         Row: {
           id: string;
@@ -193,6 +238,7 @@ export interface Database {
           students_count: number;
           price_minor: number;
           cover_gradient: string;
+          cover_url: string | null;
           published: boolean;
           order_index: number;
           created_at: string;
@@ -208,6 +254,7 @@ export interface Database {
           students_count?: number;
           price_minor?: number;
           cover_gradient?: string;
+          cover_url?: string | null;
           published?: boolean;
           order_index?: number;
           created_at?: string;
@@ -223,6 +270,7 @@ export interface Database {
           students_count?: number;
           price_minor?: number;
           cover_gradient?: string;
+          cover_url?: string | null;
           published?: boolean;
           order_index?: number;
           created_at?: string;
@@ -264,6 +312,7 @@ export interface Database {
           title: string;
           duration_sec: number;
           video_url: string | null;
+          content: string | null;
           preview: boolean;
           order_index: number;
           created_at: string;
@@ -274,6 +323,7 @@ export interface Database {
           title: string;
           duration_sec?: number;
           video_url?: string | null;
+          content?: string | null;
           preview?: boolean;
           order_index?: number;
           created_at?: string;
@@ -284,6 +334,7 @@ export interface Database {
           title?: string;
           duration_sec?: number;
           video_url?: string | null;
+          content?: string | null;
           preview?: boolean;
           order_index?: number;
           created_at?: string;
@@ -299,8 +350,13 @@ export interface Database {
           amount_minor: number;
           paid_at: string;
           method: 'card' | 'sbp' | 'subscription';
-          status: 'succeeded' | 'refunded';
+          status: 'pending' | 'succeeded' | 'canceled' | 'refunded';
           created_at: string;
+          provider: string | null;
+          provider_payment_id: string | null;
+          confirmation_url: string | null;
+          discount_minor: number;
+          promocode: string | null;
         };
         Insert: {
           id?: string;
@@ -309,8 +365,13 @@ export interface Database {
           amount_minor: number;
           paid_at?: string;
           method: 'card' | 'sbp' | 'subscription';
-          status?: 'succeeded' | 'refunded';
+          status?: 'pending' | 'succeeded' | 'canceled' | 'refunded';
           created_at?: string;
+          provider?: string | null;
+          provider_payment_id?: string | null;
+          confirmation_url?: string | null;
+          discount_minor?: number;
+          promocode?: string | null;
         };
         Update: {
           id?: string;
@@ -319,7 +380,37 @@ export interface Database {
           amount_minor?: number;
           paid_at?: string;
           method?: 'card' | 'sbp' | 'subscription';
-          status?: 'succeeded' | 'refunded';
+          status?: 'pending' | 'succeeded' | 'canceled' | 'refunded';
+          provider?: string | null;
+          provider_payment_id?: string | null;
+          confirmation_url?: string | null;
+          discount_minor?: number;
+          promocode?: string | null;
+        };
+        Relationships: [];
+      };
+      webhook_events: {
+        Row: {
+          id: string;
+          provider: string;
+          external_id: string;
+          event_type: string | null;
+          payload: Record<string, unknown>;
+          processed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          provider: string;
+          external_id: string;
+          event_type?: string | null;
+          payload?: Record<string, unknown>;
+          processed_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          processed_at?: string | null;
+          event_type?: string | null;
         };
         Relationships: [];
       };
@@ -442,6 +533,8 @@ export interface Database {
           id: string;
           user_id: string;
           tier: 'all_courses';
+          plan_id: string | null;
+          is_all_courses: boolean;
           started_at: string;
           expires_at: string;
           amount_minor: number;
@@ -453,6 +546,8 @@ export interface Database {
           id?: string;
           user_id: string;
           tier?: 'all_courses';
+          plan_id?: string | null;
+          is_all_courses?: boolean;
           started_at?: string;
           expires_at: string;
           amount_minor: number;
@@ -464,11 +559,85 @@ export interface Database {
           id?: string;
           user_id?: string;
           tier?: 'all_courses';
+          plan_id?: string | null;
+          is_all_courses?: boolean;
           started_at?: string;
           expires_at?: string;
           amount_minor?: number;
           period?: 'monthly' | 'yearly';
           cancelled?: boolean;
+        };
+        Relationships: [];
+      };
+      subscription_plans: {
+        Row: {
+          id: string;
+          slug: string;
+          name: string;
+          description: string;
+          price_monthly_minor: number;
+          price_yearly_minor: number;
+          is_all_courses: boolean;
+          published: boolean;
+          order_index: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          name: string;
+          description?: string;
+          price_monthly_minor?: number;
+          price_yearly_minor?: number;
+          is_all_courses?: boolean;
+          published?: boolean;
+          order_index?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          slug?: string;
+          name?: string;
+          description?: string;
+          price_monthly_minor?: number;
+          price_yearly_minor?: number;
+          is_all_courses?: boolean;
+          published?: boolean;
+          order_index?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      subscription_plan_courses: {
+        Row: {
+          plan_id: string;
+          course_id: string;
+        };
+        Insert: {
+          plan_id: string;
+          course_id: string;
+        };
+        Update: {
+          plan_id?: string;
+          course_id?: string;
+        };
+        Relationships: [];
+      };
+      subscription_courses: {
+        Row: {
+          subscription_id: string;
+          course_id: string;
+        };
+        Insert: {
+          subscription_id: string;
+          course_id: string;
+        };
+        Update: {
+          subscription_id?: string;
+          course_id?: string;
         };
         Relationships: [];
       };

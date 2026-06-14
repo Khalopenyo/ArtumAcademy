@@ -22,12 +22,15 @@ interface LessonPageClientProps {
   ctx: LessonContext;
   completedLessonIds: string[];
   startPositionSec: number;
+  /** Email зрителя — водяной знак поверх Kinescope-видео (анти-пиратство). */
+  watermarkText?: string;
 }
 
 export function LessonPageClient({
   ctx,
   completedLessonIds,
   startPositionSec,
+  watermarkText,
 }: LessonPageClientProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -135,12 +138,15 @@ export function LessonPageClient({
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Левая колонка — видео + контролы */}
         <div className="space-y-4 lg:col-span-2">
-          <LessonPlayer
-            videoUrl={ctx.lesson.videoUrl}
-            startPositionSec={startPositionSec}
-            fallbackGradient={ctx.course.coverGradient}
-            onProgress={handleVideoProgress}
-          />
+          {ctx.lesson.videoUrl || !ctx.lesson.content?.trim() ? (
+            <LessonPlayer
+              videoUrl={ctx.lesson.videoUrl}
+              startPositionSec={startPositionSec}
+              fallbackGradient={ctx.course.coverGradient}
+              watermarkText={watermarkText}
+              onProgress={handleVideoProgress}
+            />
+          ) : null}
 
           <div className="space-y-2">
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -165,6 +171,15 @@ export function LessonPageClient({
             </h1>
             <p className="text-sm text-muted-foreground">Модуль {ctx.module.title}</p>
           </div>
+
+          {ctx.lesson.content?.trim() ? (
+            <article
+              className="prose prose-invert max-w-none rounded-xl border border-border/60 bg-card/40 p-5 prose-img:rounded-xl"
+              // Контент уже санитизирован на сервере при сохранении (sanitize-html,
+              // строгий allowlist) — все записи идут только через updateLessonAction.
+              dangerouslySetInnerHTML={{ __html: ctx.lesson.content }}
+            />
+          ) : null}
 
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/60 p-4 backdrop-blur-xl">
             <div className="flex items-center gap-2">
