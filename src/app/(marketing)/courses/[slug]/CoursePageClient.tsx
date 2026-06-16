@@ -4,12 +4,15 @@ import { useMemo, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Check, ChevronLeft, Lock, Play, ShieldCheck, Tag, Users, X } from 'lucide-react';
+import { Check, ChevronLeft, Lock, Play, ShieldCheck, Star, Tag, Users, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { CategoryIcon } from '@/components/artum/CategoryIcon';
 import { CourseCard } from '@/components/artum/CourseCard';
 import { CourseCover } from '@/components/artum/CourseCover';
+import { CourseReviewsSection } from '@/components/artum/CourseReviewsSection';
+import type { CourseReviews, Review } from '@/lib/reviews';
 import { WishlistButton } from '@/components/artum/WishlistButton';
 import { GlassCard } from '@/components/shared/GlassCard';
 import {
@@ -33,7 +36,9 @@ interface CoursePageClientProps {
   completedLessonIds: string[];
   wishlistSlugs: string[];
   hasCertificate: boolean;
-  hasActiveSubscription: boolean;
+  subscribedSlugs: string[];
+  reviews: CourseReviews;
+  myReview: Review | null;
 }
 
 export default function CoursePageClient({
@@ -44,7 +49,9 @@ export default function CoursePageClient({
   completedLessonIds,
   wishlistSlugs,
   hasCertificate,
-  hasActiveSubscription,
+  subscribedSlugs,
+  reviews,
+  myReview,
 }: CoursePageClientProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -57,6 +64,7 @@ export default function CoursePageClient({
   const [promoError, setPromoError] = useState<string | null>(null);
 
   const purchasedSet = useMemo(() => new Set(purchasedSlugs), [purchasedSlugs]);
+  const subscribedSet = useMemo(() => new Set(subscribedSlugs), [subscribedSlugs]);
   const wishlistSet = useMemo(() => new Set(wishlistSlugs), [wishlistSlugs]);
   const completedSet = useMemo(() => new Set(completedLessonIds), [completedLessonIds]);
 
@@ -64,8 +72,8 @@ export default function CoursePageClient({
   const lessonsCount = getCourseLessonsCount(course);
   const totalDuration = getCourseTotalDuration(course);
 
-  // Доступ = явная покупка ИЛИ активная подписка
-  const purchased = hasActiveSubscription || purchasedSet.has(course.slug);
+  // Доступ = явная покупка ИЛИ подписка покрывает этот курс
+  const purchased = subscribedSet.has(course.slug) || purchasedSet.has(course.slug);
 
   // Прогресс по курсу из completedLessonIds
   const lessonsAll = course.modules.flatMap((m) => m.lessons);
@@ -165,7 +173,7 @@ export default function CoursePageClient({
                     category.tagTextClass,
                   )}
                 >
-                  <span aria-hidden>{category.emoji}</span>
+                  <CategoryIcon categoryId={course.category} className="size-3.5" />
                   {category.label}
                 </span>
                 {!purchased ? (
@@ -192,9 +200,65 @@ export default function CoursePageClient({
                   <Users className="size-4" aria-hidden />
                   {formatStudentsCount(course.studentsCount)}
                 </span>
+                {reviews.count > 0 ? (
+                  <>
+                    <span aria-hidden>·</span>
+                    <span className="inline-flex items-center gap-1 text-foreground">
+                      <Star className="size-4 fill-primary text-primary" aria-hidden />
+                      {reviews.average.toFixed(1)} ({reviews.count})
+                    </span>
+                  </>
+                ) : null}
               </div>
             </div>
           </div>
+
+          {/* Чему вы научитесь */}
+          {course.learningOutcomes && course.learningOutcomes.length > 0 ? (
+            <section className="space-y-4 rounded-2xl border border-border/60 bg-card/40 p-6 backdrop-blur-xl">
+              <h2 className="text-lg font-semibold">Чему вы научитесь</h2>
+              <ul className="grid gap-2.5 sm:grid-cols-2">
+                {course.learningOutcomes.map((o, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
+                    <span>{o}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
+          {/* Автор курса */}
+          {course.authorName ? (
+            <section className="flex items-start gap-4 rounded-2xl border border-border/60 bg-card/40 p-6 backdrop-blur-xl">
+              {course.authorAvatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={course.authorAvatarUrl}
+                  alt={course.authorName}
+                  className="size-16 shrink-0 rounded-full object-cover"
+                />
+              ) : (
+                <div className="grid size-16 shrink-0 place-items-center rounded-full bg-primary/15 text-lg font-bold text-primary">
+                  {course.authorName.charAt(0)}
+                </div>
+              )}
+              <div className="space-y-1">
+                <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Автор курса
+                </div>
+                <h2 className="text-base font-semibold">{course.authorName}</h2>
+                {course.authorTitle ? (
+                  <p className="text-sm text-primary-light">{course.authorTitle}</p>
+                ) : null}
+                {course.authorBio ? (
+                  <p className="pt-1 text-sm leading-relaxed text-muted-foreground">
+                    {course.authorBio}
+                  </p>
+                ) : null}
+              </div>
+            </section>
+          ) : null}
 
           {/* Программа */}
           <section aria-labelledby="programme-heading" className="space-y-4">
@@ -291,6 +355,15 @@ export default function CoursePageClient({
             </div>
           </section>
 
+          {/* Отзывы */}
+          <CourseReviewsSection
+            key={myReview?.id ?? 'new'}
+            courseSlug={course.slug}
+            reviews={reviews}
+            myReview={myReview}
+            canReview={purchased}
+          />
+
           {/* Похожие курсы */}
           {similar.length > 0 ? (
             <section className="space-y-4">
@@ -302,7 +375,7 @@ export default function CoursePageClient({
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {similar.map((s) => {
-                  const sPurchased = hasActiveSubscription || purchasedSet.has(s.slug);
+                  const sPurchased = subscribedSet.has(s.slug) || purchasedSet.has(s.slug);
                   const sLessons = s.modules.flatMap((m) => m.lessons);
                   const sCompleted = sLessons.filter((l) => completedSet.has(l.id)).length;
                   const sPercent =
@@ -334,7 +407,7 @@ export default function CoursePageClient({
               </div>
               {purchased ? (
                 <div className="text-3xl font-bold">
-                  {hasActiveSubscription && !purchasedSet.has(course.slug)
+                  {subscribedSet.has(course.slug) && !purchasedSet.has(course.slug)
                     ? 'По подписке'
                     : 'Бессрочный'}
                 </div>

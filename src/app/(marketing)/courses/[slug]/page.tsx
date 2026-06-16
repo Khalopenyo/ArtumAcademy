@@ -5,12 +5,13 @@ import {
   getRelatedCourses,
 } from '@/server/queries/catalog';
 import {
-  getMyActiveSubscription,
   getMyCertificates,
   getMyCompletedLessonIds,
   getMyPurchasedCourseSlugs,
+  getMySubscribedCourseSlugs,
   getMyWishlistSlugs,
 } from '@/server/queries/commerce';
+import { getCourseReviews, getMyReviewForCourse } from '@/server/queries/reviews';
 import { getCurrentUser } from '@/server/queries/auth';
 
 import CoursePageClient from './CoursePageClient';
@@ -46,7 +47,9 @@ export default async function CoursePage({ params }: CoursePageProps) {
     completedLessonIds,
     wishlistSlugs,
     certificates,
-    activeSubscription,
+    subscribedSlugs,
+    reviews,
+    myReview,
   ] = await Promise.all([
     getRelatedCourses(course.category, course.slug, 3),
     getCurrentUser(),
@@ -54,7 +57,9 @@ export default async function CoursePage({ params }: CoursePageProps) {
     getMyCompletedLessonIds(),
     getMyWishlistSlugs(),
     getMyCertificates(),
-    getMyActiveSubscription(),
+    getMySubscribedCourseSlugs(),
+    getCourseReviews(course.id),
+    getMyReviewForCourse(course.id),
   ]);
 
   const hasCertificate = certificates.some((c) => c.courseSlug === course.slug);
@@ -83,7 +88,9 @@ export default async function CoursePage({ params }: CoursePageProps) {
         completedLessonIds={Array.from(completedLessonIds)}
         wishlistSlugs={Array.from(wishlistSlugs)}
         hasCertificate={hasCertificate}
-        hasActiveSubscription={!!activeSubscription}
+        subscribedSlugs={Array.from(subscribedSlugs)}
+        reviews={reviews}
+        myReview={myReview}
       />
     </>
   );
