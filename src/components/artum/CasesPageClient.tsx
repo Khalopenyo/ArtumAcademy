@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 
 import { CaseCard } from '@/components/artum/CaseCard';
+import { CategoryIcon } from '@/components/artum/CategoryIcon';
 import { type CategoryId, CATEGORIES } from '@/lib/mock/courses';
 import type { Case } from '@/lib/cases';
 import { cn } from '@/lib/utils';
@@ -39,7 +40,7 @@ export function CasesPageClient({ cases }: { cases: Case[] }) {
             if (count === 0) return null;
             return (
               <FilterPill key={cat.id} active={filter === cat.id} onClick={() => setFilter(cat.id)}>
-                {cat.emoji} {cat.label} ({count})
+                <CategoryIcon categoryId={cat.id} className="size-3.5" /> {cat.label} ({count})
               </FilterPill>
             );
           })}
@@ -78,7 +79,7 @@ function FilterPill({
         'inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-medium backdrop-blur transition-all',
         active
           ? 'border-primary bg-primary text-primary-foreground shadow-[0_0_24px_rgba(168,85,247,0.35)]'
-          : 'border-border/70 bg-card/60 text-muted-foreground hover:border-primary/50 hover:text-[#E8DEFF]',
+          : 'border-border/70 bg-card/60 text-muted-foreground hover:border-primary/50 hover:text-primary-lighter',
       )}
     >
       {children}

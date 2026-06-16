@@ -1,5 +1,6 @@
 import { Trophy } from 'lucide-react';
 
+import { CategoryIcon } from '@/components/artum/CategoryIcon';
 import { getCategory } from '@/lib/mock/courses';
 import { type Case, caseVideoEmbedUrl } from '@/lib/cases';
 import { cn } from '@/lib/utils';
@@ -33,8 +34,8 @@ export function CaseCard({ caseItem }: { caseItem: Case }) {
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-600/30 via-fuchsia-500/20 to-pink-500/20 text-4xl">
-            <span aria-hidden>{category.emoji}</span>
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-600/30 via-fuchsia-500/20 to-pink-500/20">
+            <CategoryIcon categoryId={caseItem.category} className="size-10 text-white/50" />
           </div>
         )}
         <span
@@ -44,7 +45,7 @@ export function CaseCard({ caseItem }: { caseItem: Case }) {
             category.tagTextClass,
           )}
         >
-          <span aria-hidden>{category.emoji}</span>
+          <CategoryIcon categoryId={caseItem.category} className="size-3" />
           {category.label}
         </span>
       </div>
@@ -54,7 +55,7 @@ export function CaseCard({ caseItem }: { caseItem: Case }) {
           {caseItem.title}
         </h3>
         {caseItem.studentName ? (
-          <p className="text-xs font-medium text-[#C4A8FF]">{caseItem.studentName}</p>
+          <p className="text-xs font-medium text-primary-light">{caseItem.studentName}</p>
         ) : null}
         {caseItem.description ? (
           <p className="line-clamp-4 text-[13px] leading-relaxed text-muted-foreground">
@@ -63,8 +64,8 @@ export function CaseCard({ caseItem }: { caseItem: Case }) {
         ) : null}
         {caseItem.result ? (
           <div className="mt-auto flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/10 p-2.5">
-            <Trophy className="mt-0.5 size-4 shrink-0 text-[#C4A8FF]" aria-hidden />
-            <span className="text-[13px] font-medium text-[#E8DEFF]">{caseItem.result}</span>
+            <Trophy className="mt-0.5 size-4 shrink-0 text-primary-light" aria-hidden />
+            <span className="text-[13px] font-medium text-primary-lighter">{caseItem.result}</span>
           </div>
         ) : null}
       </div>
