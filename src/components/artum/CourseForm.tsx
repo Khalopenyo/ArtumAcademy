@@ -61,6 +61,16 @@ export function CourseForm({ initial }: CourseFormProps) {
   const [published, setPublished] = useState(initial?.published ?? true);
   const [coverUrl, setCoverUrl] = useState<string | null>(initial?.coverUrl ?? null);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [authorName, setAuthorName] = useState(initial?.authorName ?? '');
+  const [authorTitle, setAuthorTitle] = useState(initial?.authorTitle ?? '');
+  const [authorBio, setAuthorBio] = useState(initial?.authorBio ?? '');
+  const [authorAvatarUrl, setAuthorAvatarUrl] = useState<string | null>(
+    initial?.authorAvatarUrl ?? null,
+  );
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [outcomesText, setOutcomesText] = useState(
+    (initial?.learningOutcomes ?? []).join('\n'),
+  );
 
   function pickCover() {
     const input = document.createElement('input');
@@ -88,6 +98,32 @@ export function CourseForm({ initial }: CourseFormProps) {
     input.click();
   }
 
+  function pickAvatar() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      setUploadingAvatar(true);
+      const fd = new FormData();
+      fd.append('file', file);
+      fetch('/api/admin/course-covers', { method: 'POST', body: fd })
+        .then((r) => r.json())
+        .then((j) => {
+          if (j?.ok && j.url) {
+            setAuthorAvatarUrl(j.url as string);
+            toast.success('Фото автора загружено');
+          } else {
+            toast.error(j?.error ?? 'Не удалось загрузить фото');
+          }
+        })
+        .catch(() => toast.error('Сеть прервалась при загрузке'))
+        .finally(() => setUploadingAvatar(false));
+    };
+    input.click();
+  }
+
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title || !slug) {
@@ -99,6 +135,18 @@ export function CourseForm({ initial }: CourseFormProps) {
       toast.error('Некорректная цена');
       return;
     }
+
+    const learningOutcomes = outcomesText
+      .split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const authorFields = {
+      authorName: authorName.trim() || null,
+      authorTitle: authorTitle.trim() || null,
+      authorBio: authorBio.trim() || null,
+      authorAvatarUrl,
+      learningOutcomes,
+    };
 
     startTransition(async () => {
       if (editing) {
@@ -112,6 +160,7 @@ export function CourseForm({ initial }: CourseFormProps) {
           coverGradient,
           coverUrl,
           published,
+          ...authorFields,
         });
         if (!res.ok) {
           toast.error(res.error);
@@ -136,6 +185,7 @@ export function CourseForm({ initial }: CourseFormProps) {
         coverUrl,
         published,
         orderIndex: 100,
+        ...authorFields,
       });
       if (!res.ok) {
         toast.error(res.error);
@@ -266,6 +316,78 @@ export function CourseForm({ initial }: CourseFormProps) {
           </span>
         </span>
       </label>
+
+      <div className="space-y-4 rounded-lg border border-border p-4">
+        <div className="text-sm font-medium">Автор курса <span className="text-muted-foreground">— блок доверия на странице</span></div>
+        <div className="flex items-center gap-3">
+          <div className="relative size-16 shrink-0 overflow-hidden rounded-full border border-border bg-secondary/40">
+            {authorAvatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={authorAvatarUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-[11px] text-muted-foreground">
+                фото
+              </div>
+            )}
+          </div>
+          <div className="flex flex-col items-start gap-1.5">
+            <Button type="button" variant="outline" size="sm" onClick={pickAvatar} disabled={uploadingAvatar}>
+              {uploadingAvatar ? 'Загрузка…' : authorAvatarUrl ? 'Заменить фото' : 'Фото автора'}
+            </Button>
+            {authorAvatarUrl ? (
+              <Button type="button" variant="ghost" size="sm" onClick={() => setAuthorAvatarUrl(null)}>
+                Убрать
+              </Button>
+            ) : null}
+          </div>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="authorName">Имя автора</Label>
+            <Input
+              id="authorName"
+              value={authorName}
+              onChange={(e) => setAuthorName(e.target.value)}
+              placeholder="Иван Петров"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="authorTitle">Регалии / роль</Label>
+            <Input
+              id="authorTitle"
+              value={authorTitle}
+              onChange={(e) => setAuthorTitle(e.target.value)}
+              placeholder="Арт-директор, 8 лет в Midjourney"
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="authorBio">Об авторе</Label>
+          <textarea
+            id="authorBio"
+            rows={2}
+            value={authorBio}
+            onChange={(e) => setAuthorBio(e.target.value)}
+            placeholder="Коротко: опыт, проекты, чем известен"
+            className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="outcomes">Чему научитесь (по пункту на строку)</Label>
+        <textarea
+          id="outcomes"
+          rows={4}
+          value={outcomesText}
+          onChange={(e) => setOutcomesText(e.target.value)}
+          placeholder={'Генерировать изображения в Midjourney\nПисать сложные промпты\nГотовить ассеты для соцсетей'}
+          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        />
+        <p className="text-xs text-muted-foreground">
+          Каждая строка — отдельный пункт «Чему вы научитесь» на странице курса.
+        </p>
+      </div>
 
       <div className="space-y-2">
         <Label>Обложка курса (картинка / GIF / видео)</Label>

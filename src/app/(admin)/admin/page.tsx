@@ -1,5 +1,17 @@
 import Link from 'next/link';
-import { BookOpen, CreditCard, Layers, Percent, ShieldCheck, Sparkles, Users } from 'lucide-react';
+import {
+  Award,
+  BookOpen,
+  CreditCard,
+  GraduationCap,
+  Layers,
+  Percent,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  Users,
+  Wallet,
+} from 'lucide-react';
 
 import { RevenueChart } from '@/components/artum/RevenueChart';
 import { requireAdmin } from '@/server/queries/auth';
@@ -32,21 +44,47 @@ export default async function AdminHomePage() {
         </div>
       </div>
 
-      {/* Stats overview */}
-      <section className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Пользователей" value={String(stats.totalUsers)} />
-        <StatCard label="Курсов" value={String(stats.totalCourses)} />
-        <StatCard label="Уроков" value={String(stats.totalLessons)} />
-        <StatCard label="Платежей" value={String(stats.totalPayments)} />
-        <StatCard label="Сертификатов" value={String(stats.totalCertificates)} />
-        <StatCard
-          label="Активных подписок"
-          value={String(stats.activeSubscriptions)}
-        />
-        <StatCard
+      {/* Главные бизнес-метрики — крупно, верхний уровень иерархии */}
+      <section className="mb-3 grid gap-3 sm:grid-cols-3">
+        <HeroStat
           label="Доход"
           value={`${new Intl.NumberFormat('ru-RU').format(stats.totalRevenueMinor / 100)} ₽`}
+          icon={<Wallet className="size-5" aria-hidden />}
           accent
+        />
+        <HeroStat
+          label="Платежей"
+          value={String(stats.totalPayments)}
+          icon={<CreditCard className="size-5" aria-hidden />}
+        />
+        <HeroStat
+          label="Активных подписок"
+          value={String(stats.activeSubscriptions)}
+          icon={<Layers className="size-5" aria-hidden />}
+        />
+      </section>
+
+      {/* Каталог и аудитория — компактно, второй уровень */}
+      <section className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <MiniStat
+          label="Пользователей"
+          value={String(stats.totalUsers)}
+          icon={<Users className="size-4" aria-hidden />}
+        />
+        <MiniStat
+          label="Курсов"
+          value={String(stats.totalCourses)}
+          icon={<BookOpen className="size-4" aria-hidden />}
+        />
+        <MiniStat
+          label="Уроков"
+          value={String(stats.totalLessons)}
+          icon={<GraduationCap className="size-4" aria-hidden />}
+        />
+        <MiniStat
+          label="Сертификатов"
+          value={String(stats.totalCertificates)}
+          icon={<Award className="size-4" aria-hidden />}
         />
       </section>
 
@@ -68,6 +106,12 @@ export default async function AdminHomePage() {
           icon={<Sparkles className="size-6" aria-hidden />}
           title="Кейсы"
           description="Истории студентов и проекты для публичной страницы /cases."
+        />
+        <QuickLink
+          href="/admin/reviews"
+          icon={<Star className="size-6" aria-hidden />}
+          title="Отзывы"
+          description="Модерация отзывов о курсах: рейтинг, тексты, удаление."
         />
         <QuickLink
           href="/admin/users"
@@ -98,26 +142,57 @@ export default async function AdminHomePage() {
   );
 }
 
-function StatCard({
+/** Крупная карточка ключевой метрики (верхний уровень KPI-иерархии). */
+function HeroStat({
   label,
   value,
+  icon,
   accent = false,
 }: {
   label: string;
   value: string;
+  icon: React.ReactNode;
   accent?: boolean;
 }) {
   return (
-    <div className="rounded-2xl border border-border/60 bg-card/60 p-5 backdrop-blur-xl">
-      <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
+    <div className="rounded-2xl border border-border/60 bg-card/60 p-5 backdrop-blur-xl sm:p-6">
+      <div className="flex items-center gap-2.5 text-xs uppercase tracking-wider text-muted-foreground">
+        <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary ring-1 ring-primary/30">
+          {icon}
+        </span>
+        {label}
+      </div>
       <div
         className={
           accent
-            ? 'mt-2 bg-gradient-to-br from-white to-[#E8DEFF] bg-clip-text text-3xl font-bold leading-none text-transparent'
-            : 'mt-2 text-3xl font-semibold leading-none'
+            ? 'mt-4 bg-gradient-to-br from-white to-primary-lighter bg-clip-text text-4xl font-bold leading-none text-transparent'
+            : 'mt-4 text-4xl font-bold leading-none'
         }
       >
         {value}
+      </div>
+    </div>
+  );
+}
+
+/** Компактная вторичная метрика (нижний уровень KPI-иерархии). */
+function MiniStat({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: string;
+  icon: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-card/40 p-4 backdrop-blur-xl">
+      <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary/60 text-muted-foreground">
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <div className="text-xl font-semibold leading-none">{value}</div>
+        <div className="mt-1 truncate text-xs text-muted-foreground">{label}</div>
       </div>
     </div>
   );

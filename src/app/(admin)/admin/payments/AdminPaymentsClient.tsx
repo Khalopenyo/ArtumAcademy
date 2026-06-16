@@ -79,7 +79,7 @@ export function AdminPaymentsClient({ payments }: { payments: AdminPaymentRow[] 
         </div>
       ) : (
         <div className="mt-6 overflow-x-auto rounded-2xl border border-border bg-card">
-          <table className="w-full text-sm">
+          <table className="hidden w-full text-sm md:table">
             <thead>
               <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <th className="px-5 py-3">Дата</th>
@@ -134,6 +134,53 @@ export function AdminPaymentsClient({ payments }: { payments: AdminPaymentRow[] 
               ))}
             </tbody>
           </table>
+
+          {/* Mobile: карточки */}
+          <ul className="divide-y divide-border/40 md:hidden">
+            {visible.map((p) => (
+              <li key={p.id} className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="truncate font-medium">{p.userEmail}</div>
+                    <div className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+                      {p.courseTitle ?? 'Подписка'}
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 gap-1">
+                    {p.status === 'succeeded' ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={pending}
+                        onClick={() => onRefund(p.id)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        Вернуть
+                      </Button>
+                    ) : null}
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+                  <span
+                    className={cn(
+                      'inline-flex rounded-full px-2.5 py-0.5 font-medium',
+                      STATUS_META[p.status].cls,
+                    )}
+                  >
+                    {STATUS_META[p.status].label}
+                  </span>
+                  <span className="font-medium tabular-nums">{formatPrice(p.amountMinor)}</span>
+                  <span className="text-muted-foreground">{METHOD_LABEL[p.method]}</span>
+                  <span className="text-muted-foreground">
+                    {new Date(p.paidAt).toLocaleDateString('ru-RU')}
+                  </span>
+                  {p.promocode ? (
+                    <span className="text-muted-foreground">Промокод: {p.promocode}</span>
+                  ) : null}
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>

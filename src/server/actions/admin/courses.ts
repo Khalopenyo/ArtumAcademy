@@ -41,6 +41,11 @@ const CourseSchema = z.object({
   coverUrl: z.string().nullable().optional(),
   published: z.boolean().default(true),
   orderIndex: z.number().int().default(100),
+  authorName: z.string().nullable().optional(),
+  authorTitle: z.string().nullable().optional(),
+  authorBio: z.string().nullable().optional(),
+  authorAvatarUrl: z.string().nullable().optional(),
+  learningOutcomes: z.array(z.string()).default([]),
 });
 
 type CourseInput = z.infer<typeof CourseSchema>;
@@ -70,6 +75,11 @@ export async function createCourseAction(
     cover_url: parsed.data.coverUrl ?? null,
     published: parsed.data.published,
     order_index: parsed.data.orderIndex,
+    author_name: parsed.data.authorName ?? null,
+    author_title: parsed.data.authorTitle ?? null,
+    author_bio: parsed.data.authorBio ?? null,
+    author_avatar_url: parsed.data.authorAvatarUrl ?? null,
+    learning_outcomes: parsed.data.learningOutcomes,
   });
   if (error) {
     if (error.code === '23505') return { ok: false, error: 'Курс с таким slug уже существует' };
@@ -98,6 +108,11 @@ export async function updateCourseAction(
   if (patch.coverUrl !== undefined) row.cover_url = patch.coverUrl;
   if (patch.published !== undefined) row.published = patch.published;
   if (patch.orderIndex !== undefined) row.order_index = patch.orderIndex;
+  if (patch.authorName !== undefined) row.author_name = patch.authorName;
+  if (patch.authorTitle !== undefined) row.author_title = patch.authorTitle;
+  if (patch.authorBio !== undefined) row.author_bio = patch.authorBio;
+  if (patch.authorAvatarUrl !== undefined) row.author_avatar_url = patch.authorAvatarUrl;
+  if (patch.learningOutcomes !== undefined) row.learning_outcomes = patch.learningOutcomes;
   const { error } = await admin
     .from('courses')
     .update(row as never)

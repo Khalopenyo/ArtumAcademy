@@ -212,7 +212,7 @@ export function PromocodesClient({ promocodes }: PromocodesClientProps) {
             Промокодов пока нет. Создайте первый через форму выше.
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <table className="hidden w-full text-sm md:table">
             <thead className="bg-card/40 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th className="px-5 py-3 text-left font-medium">Код</th>
@@ -254,6 +254,46 @@ export function PromocodesClient({ promocodes }: PromocodesClientProps) {
               ))}
             </tbody>
           </table>
+        )}
+
+        {/* Mobile: карточки */}
+        {promocodes.length === 0 ? null : (
+          <ul className="divide-y divide-border/40 md:hidden">
+            {promocodes.map((p) => (
+              <li key={p.id} className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <span className="truncate font-mono font-medium text-primary">{p.code}</span>
+                  </div>
+                  <div className="flex shrink-0 gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      aria-label={`Удалить ${p.code}`}
+                      onClick={() => handleDelete(p.id, p.code)}
+                      disabled={pending}
+                    >
+                      <Trash2 className="size-4 text-destructive" aria-hidden />
+                    </Button>
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+                  <span className="tabular-nums">
+                    {p.type === 'percent' ? `${p.value}%` : `${p.value / 100} ₽`}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {p.validUntil
+                      ? `до ${new Date(p.validUntil).toLocaleDateString('ru-RU')}`
+                      : 'бессрочно'}
+                  </span>
+                  <span className="tabular-nums">
+                    осталось {p.usesLeft ?? '∞'}
+                  </span>
+                  <span className="text-muted-foreground">{p.note || '—'}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
     </div>
