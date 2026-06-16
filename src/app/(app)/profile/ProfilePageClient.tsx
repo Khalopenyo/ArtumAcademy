@@ -12,6 +12,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
+import { CertificateCard } from '@/components/artum/CertificateCard';
 import { CourseCard } from '@/components/artum/CourseCard';
 import { ProfileSettings } from '@/components/artum/ProfileSettings';
 import {
@@ -39,7 +40,7 @@ interface ProfilePageClientProps {
   wishlistSlugs: string[];
   certificates: CertificateRecord[];
   payments: PaymentRecord[];
-  hasActiveSubscription: boolean;
+  subscribedSlugs: string[];
 }
 
 export function ProfilePageClient(props: ProfilePageClientProps) {
@@ -58,7 +59,7 @@ function ProfileInner({
   wishlistSlugs,
   certificates,
   payments,
-  hasActiveSubscription,
+  subscribedSlugs,
 }: ProfilePageClientProps) {
   const searchParams = useSearchParams();
   const initialTab = VALID_TABS.has(searchParams.get('tab') ?? '')
@@ -70,14 +71,15 @@ function ProfileInner({
     () => new Set(purchases.map((p) => p.courseSlug)),
     [purchases],
   );
+  const subscribedSet = useMemo(() => new Set(subscribedSlugs), [subscribedSlugs]);
   const completedSet = useMemo(() => new Set(completedLessonIds), [completedLessonIds]);
   const wishlistSet = useMemo(() => new Set(wishlistSlugs), [wishlistSlugs]);
 
-  // С учётом подписки — все курсы accessible если есть active sub
+  // Доступные курсы — купленные ИЛИ покрытые подпиской (её набором)
   const accessibleCourses = useMemo(
     () =>
-      courses.filter((c) => hasActiveSubscription || purchasedSet.has(c.slug)),
-    [courses, hasActiveSubscription, purchasedSet],
+      courses.filter((c) => subscribedSet.has(c.slug) || purchasedSet.has(c.slug)),
+    [courses, subscribedSet, purchasedSet],
   );
 
   const wishlistCourses = useMemo(
@@ -255,7 +257,7 @@ function ProfileInner({
           ) : (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {wishlistCourses.map((course) => {
-                const isPurchased = hasActiveSubscription || purchasedSet.has(course.slug);
+                const isPurchased = subscribedSet.has(course.slug) || purchasedSet.has(course.slug);
                 const progress = isPurchased ? courseProgress(course).percent : 0;
                 return (
                   <CourseCard
@@ -281,32 +283,13 @@ function ProfileInner({
               hint="Сертификат выдаётся автоматически при 100% прохождении курса."
             />
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {certificates.map((cert) => (
-                <div key={cert.id} className="space-y-3 rounded-2xl border border-border/60 bg-card/60 p-5 backdrop-blur-xl">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="inline-flex size-12 items-center justify-center rounded-xl bg-primary/15 text-primary">
-                      <Award className="size-6" aria-hidden />
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(cert.issuedAt).toLocaleDateString('ru-RU')}
-                    </span>
-                  </div>
-                  <div>
-                    <div className="text-xs uppercase tracking-wider text-muted-foreground">
-                      Сертификат
-                    </div>
-                    <h3 className="mt-1 font-semibold">
-                      {slugToTitle.get(cert.courseSlug) ?? cert.courseSlug}
-                    </h3>
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    № {cert.verificationNumber}
-                  </div>
-                  <Button asChild variant="outline" size="sm" className="w-full">
-                    <Link href={`/certificates#${cert.id}`}>Открыть</Link>
-                  </Button>
-                </div>
+                <CertificateCard
+                  key={cert.id}
+                  cert={cert}
+                  course={courses.find((c) => c.slug === cert.courseSlug) ?? null}
+                />
               ))}
             </div>
           )}
@@ -383,7 +366,7 @@ function ProfileInner({
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-border/40 bg-background/30 p-3 text-center backdrop-blur">
-      <div className="bg-gradient-to-br from-white to-[#E8DEFF] bg-clip-text text-xl font-bold leading-none text-transparent">{value}</div>
+      <div className="bg-gradient-to-br from-white to-primary-lighter bg-clip-text text-xl font-bold leading-none text-transparent">{value}</div>
       <div className="mt-1 text-xs text-muted-foreground">{label}</div>
     </div>
   );

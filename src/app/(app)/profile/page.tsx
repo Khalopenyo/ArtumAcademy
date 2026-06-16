@@ -1,11 +1,11 @@
 import { requireUser } from '@/server/queries/auth';
 import { getPublishedCourses } from '@/server/queries/catalog';
 import {
-  getMyActiveSubscription,
   getMyCertificates,
   getMyCompletedLessonIds,
   getMyPayments,
   getMyPurchases,
+  getMySubscribedCourseSlugs,
   getMyWishlistSlugs,
 } from '@/server/queries/commerce';
 
@@ -28,7 +28,7 @@ export default async function ProfilePage() {
     wishlistSlugs,
     certificates,
     payments,
-    activeSubscription,
+    subscribedSlugs,
   ] = await Promise.all([
     getPublishedCourses(),
     getMyPurchases(),
@@ -36,7 +36,7 @@ export default async function ProfilePage() {
     getMyWishlistSlugs(),
     getMyCertificates(),
     getMyPayments(),
-    getMyActiveSubscription(),
+    getMySubscribedCourseSlugs(),
   ]);
 
   return (
@@ -48,7 +48,7 @@ export default async function ProfilePage() {
       wishlistSlugs={Array.from(wishlistSlugs)}
       certificates={certificates}
       payments={payments}
-      hasActiveSubscription={!!activeSubscription}
+      subscribedSlugs={Array.from(subscribedSlugs)}
     />
   );
 }
