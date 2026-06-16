@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowRight, Clock, Play, Users, Video } from 'lucide-react';
 
+import { CategoryIcon } from '@/components/artum/CategoryIcon';
 import { CourseCover } from '@/components/artum/CourseCover';
 import { WishlistButton } from '@/components/artum/WishlistButton';
 import {
@@ -85,7 +86,7 @@ export function CourseCard({
             'border-white/10',
           )}
         >
-          <span aria-hidden>{category.emoji}</span>
+          <CategoryIcon categoryId={course.category} className="size-3" />
           {category.label}
         </span>
 
@@ -149,7 +150,7 @@ export function CourseCard({
               className={cn(
                 'h-full rounded-full transition-all',
                 isStarted
-                  ? 'bg-gradient-to-r from-primary to-[#C4A8FF]'
+                  ? 'bg-gradient-to-r from-primary to-primary-light'
                   : 'bg-transparent',
               )}
               style={{ width: `${progressPercent}%` }}
@@ -159,7 +160,7 @@ export function CourseCard({
           <span
             className={cn(
               'min-w-[36px] text-right text-[11px] font-semibold',
-              isStarted ? 'text-[#C4A8FF]' : 'text-muted-foreground/70',
+              isStarted ? 'text-primary-light' : 'text-muted-foreground/70',
             )}
           >
             {isNew ? 'Новый' : `${progressPercent}%`}

@@ -19,7 +19,7 @@ export default function AboutPage() {
         <h1 className="mt-5 text-3xl font-bold tracking-tight sm:text-4xl">
           О компании
         </h1>
-        <p className="mt-4 text-base leading-relaxed text-[#C4A8FF]/80">
+        <p className="mt-4 text-base leading-relaxed text-primary-light/80">
           Artum Academy — образовательная платформа с курсами по AI, фото, видео,
           монтажу, дизайну, визуалу и копирайтингу. Преподают практики индустрии,
           а не теоретики.

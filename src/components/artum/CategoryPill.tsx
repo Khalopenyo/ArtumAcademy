@@ -1,5 +1,6 @@
 'use client';
 
+import { CategoryIcon } from '@/components/artum/CategoryIcon';
 import type { CategoryId } from '@/lib/mock/courses';
 import { cn } from '@/lib/utils';
 
@@ -26,13 +27,14 @@ export function CategoryPill({ categoryId, label, active, onSelect }: CategoryPi
       type="button"
       onClick={() => onSelect(categoryId)}
       className={cn(
-        'inline-flex items-center rounded-full border px-4 py-1.5 text-xs font-medium backdrop-blur transition-all sm:px-[18px] sm:py-[7px]',
+        'inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-medium backdrop-blur transition-all sm:px-[18px] sm:py-[7px]',
         active
-          ? 'border-primary bg-primary text-primary-foreground shadow-[0_0_24px_rgba(168,85,247,0.35)]'
-          : 'border-border/70 bg-card/60 text-muted-foreground hover:border-primary/50 hover:text-[#E8DEFF]',
+          ? 'border-primary bg-primary text-primary-foreground glow-primary'
+          : 'border-border/70 bg-card/60 text-muted-foreground hover:border-primary/50 hover:text-primary-lighter',
       )}
       aria-pressed={active}
     >
+      {categoryId !== 'all' ? <CategoryIcon categoryId={categoryId} className="size-3.5" /> : null}
       {label}
     </button>
   );

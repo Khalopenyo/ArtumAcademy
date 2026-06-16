@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { Check, ChevronLeft, ChevronRight, Play } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { CategoryIcon } from '@/components/artum/CategoryIcon';
 import { LessonPlayer } from '@/components/artum/LessonPlayer';
 import { formatDuration, getCategory } from '@/lib/mock/courses';
 import {
@@ -157,7 +158,7 @@ export function LessonPageClient({
                   category.tagTextClass,
                 )}
               >
-                <span aria-hidden>{category.emoji}</span>
+                <CategoryIcon categoryId={category.id} className="size-3.5" />
                 {category.label}
               </span>
               <span>
@@ -197,14 +198,14 @@ export function LessonPageClient({
                 </Button>
               )}
               {ctx.next ? (
-                <Button asChild variant="outline" size="sm">
+                <Button asChild variant="default" size="sm">
                   <Link href={`/learn/${ctx.next.courseSlug}/${ctx.next.lessonId}`}>
                     Следующий
                     <ChevronRight className="ml-1 size-4" aria-hidden />
                   </Link>
                 </Button>
               ) : (
-                <Button variant="outline" size="sm" disabled>
+                <Button variant="default" size="sm" disabled>
                   Следующий
                   <ChevronRight className="ml-1 size-4" aria-hidden />
                 </Button>
@@ -249,43 +250,54 @@ export function LessonPageClient({
                 />
               </div>
             </div>
-            <ul className="max-h-[60vh] divide-y divide-border overflow-y-auto text-sm">
-              {ctx.course.modules.map((m, mIdx) =>
-                m.lessons.map((l, lIdx) => {
-                  const active = l.id === ctx.lesson.id;
-                  const isDone = completedLocal.has(l.id);
-                  return (
-                    <li key={l.id}>
-                      <Link
-                        href={`/learn/${ctx.course.slug}/${l.id}`}
-                        className={cn(
-                          'flex items-center gap-3 p-3 transition-colors',
-                          active ? 'bg-primary/10 text-foreground' : 'hover:bg-secondary',
-                        )}
-                      >
-                        <span className="shrink-0">
-                          {isDone ? (
-                            <Check className="size-4 text-primary" aria-hidden />
-                          ) : active ? (
-                            <Play className="size-4 text-primary" fill="currentColor" aria-hidden />
-                          ) : (
-                            <span className="inline-flex size-4 items-center justify-center text-xs text-muted-foreground">
-                              ·
+            <div className="max-h-[60vh] overflow-y-auto">
+              {ctx.course.modules.map((m, mIdx) => (
+                <div key={m.id}>
+                  <div className="sticky top-0 z-10 border-b border-border/50 bg-card/95 px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground backdrop-blur">
+                    Модуль {mIdx + 1}: {m.title}
+                  </div>
+                  <ul className="divide-y divide-border/60 text-sm">
+                    {m.lessons.map((l, lIdx) => {
+                      const active = l.id === ctx.lesson.id;
+                      const isDone = completedLocal.has(l.id);
+                      return (
+                        <li key={l.id}>
+                          <Link
+                            href={`/learn/${ctx.course.slug}/${l.id}`}
+                            className={cn(
+                              'flex items-center gap-3 p-3 transition-colors',
+                              active ? 'bg-primary/10 text-foreground' : 'hover:bg-secondary',
+                            )}
+                          >
+                            <span className="shrink-0">
+                              {isDone ? (
+                                <Check className="size-4 text-primary" aria-hidden />
+                              ) : active ? (
+                                <Play
+                                  className="size-4 text-primary"
+                                  fill="currentColor"
+                                  aria-hidden
+                                />
+                              ) : (
+                                <span className="inline-flex size-4 items-center justify-center text-xs text-muted-foreground">
+                                  ·
+                                </span>
+                              )}
                             </span>
-                          )}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm">{l.title}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {mIdx + 1}.{lIdx + 1} · {formatDuration(l.durationSec)}
-                          </div>
-                        </div>
-                      </Link>
-                    </li>
-                  );
-                }),
-              )}
-            </ul>
+                            <div className="min-w-0 flex-1">
+                              <div className="truncate text-sm">{l.title}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {mIdx + 1}.{lIdx + 1} · {formatDuration(l.durationSec)}
+                              </div>
+                            </div>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
+            </div>
           </div>
         </aside>
       </div>

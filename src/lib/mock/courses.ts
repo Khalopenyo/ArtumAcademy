@@ -97,6 +97,13 @@ export interface Course {
   coverUrl?: string | null;
   /** Опубликован ли курс (виден в каталоге). false = черновик. */
   published?: boolean;
+  /** Автор/преподаватель — блок доверия на странице курса. */
+  authorName?: string | null;
+  authorTitle?: string | null;
+  authorBio?: string | null;
+  authorAvatarUrl?: string | null;
+  /** «Чему вы научитесь» — список результатов (буллеты). */
+  learningOutcomes?: string[];
   modules: Module[];
   /** Является ли курс купленным текущим пользователем (mock) */
   purchased: boolean;

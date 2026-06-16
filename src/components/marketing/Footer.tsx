@@ -34,7 +34,7 @@ export function Footer({ className }: FooterProps) {
               target="_blank"
               rel="noreferrer noopener"
               aria-label="Telegram"
-              className="inline-flex size-7 items-center justify-center rounded-md bg-card/60 text-muted-foreground transition-all hover:bg-primary/20 hover:text-[#C4A8FF]"
+              className="inline-flex size-7 items-center justify-center rounded-md bg-card/60 text-muted-foreground transition-all hover:bg-primary/20 hover:text-primary-light"
             >
               <Send className="size-3.5" aria-hidden />
             </a>
@@ -43,7 +43,7 @@ export function Footer({ className }: FooterProps) {
               target="_blank"
               rel="noreferrer noopener"
               aria-label="VK"
-              className="inline-flex size-7 items-center justify-center rounded-md bg-card/60 text-[11px] font-bold text-muted-foreground transition-all hover:bg-primary/20 hover:text-[#C4A8FF]"
+              className="inline-flex size-7 items-center justify-center rounded-md bg-card/60 text-[11px] font-bold text-muted-foreground transition-all hover:bg-primary/20 hover:text-primary-light"
             >
               VK
             </a>
@@ -89,16 +89,16 @@ export function Footer({ className }: FooterProps) {
         <div className="container mx-auto flex flex-col items-center justify-between gap-2 px-4 py-3 text-[10px] text-muted-foreground/70 sm:flex-row sm:px-9">
           <span>© 2026 Artum Academy. Все права защищены.</span>
           <div className="flex gap-4">
-            <Link href="/privacy" className="transition-colors hover:text-[#C4A8FF]">
+            <Link href="/privacy" className="transition-colors hover:text-primary-light">
               Политика конфиденциальности
             </Link>
-            <Link href="/oferta" className="transition-colors hover:text-[#C4A8FF]">
+            <Link href="/oferta" className="transition-colors hover:text-primary-light">
               Оферта
             </Link>
-            <Link href="/requisites" className="transition-colors hover:text-[#C4A8FF]">
+            <Link href="/requisites" className="transition-colors hover:text-primary-light">
               Реквизиты
             </Link>
-            <Link href="/faq" className="transition-colors hover:text-[#C4A8FF]">
+            <Link href="/faq" className="transition-colors hover:text-primary-light">
               Вопросы
             </Link>
           </div>
@@ -124,7 +124,7 @@ function FooterLink({ href, children }: { href: string; children: React.ReactNod
     <li>
       <Link
         href={href}
-        className="text-[11px] text-muted-foreground/70 transition-colors hover:text-[#C4A8FF]"
+        className="text-[11px] text-muted-foreground/70 transition-colors hover:text-primary-light"
       >
         {children}
       </Link>

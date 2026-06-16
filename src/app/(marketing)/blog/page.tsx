@@ -20,7 +20,7 @@ export default function BlogPage() {
           <Newspaper className="size-6" />
         </div>
         <h1 className="mt-5 text-2xl font-bold tracking-tight">Блог / Новости — скоро</h1>
-        <p className="mt-2 text-sm text-[#C4A8FF]/70">
+        <p className="mt-2 text-sm text-primary-light/70">
           Здесь будут статьи, разборы и новости платформы: тренды нейросетей,
           съёмки, монтажа и дизайна, обновления курсов. Раздел в работе.
         </p>

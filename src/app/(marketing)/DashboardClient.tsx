@@ -26,6 +26,17 @@ function parseCategoryParam(raw: string | undefined | null): CategoryId | 'all' 
   return 'all';
 }
 
+type SortKey = 'default' | 'popular' | 'cheap' | 'expensive';
+
+/** Русское склонение слова «курс» по числу. */
+function coursesWord(n: number): string {
+  const m10 = n % 10;
+  const m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return 'курс';
+  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return 'курса';
+  return 'курсов';
+}
+
 interface DashboardClientProps {
   courses: Course[];
   userFirstName: string | null;
@@ -33,7 +44,7 @@ interface DashboardClientProps {
   wishlistSlugs: string[];
   completedLessonIds: string[];
   certificatesCount: number;
-  hasActiveSubscription: boolean;
+  subscribedSlugs: string[];
 }
 
 export default function DashboardClient(props: DashboardClientProps) {
@@ -51,7 +62,7 @@ function DashboardInner({
   wishlistSlugs,
   completedLessonIds,
   certificatesCount,
-  hasActiveSubscription,
+  subscribedSlugs,
 }: DashboardClientProps) {
   const searchParams = useSearchParams();
   const [activeCategory, setActiveCategory] = useState(
@@ -59,13 +70,15 @@ function DashboardInner({
   );
   const [query, setQuery] = useState(searchParams.get('q') ?? '');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [sort, setSort] = useState<SortKey>('default');
 
   const purchasedSet = useMemo(() => new Set(purchasedSlugs), [purchasedSlugs]);
+  const subscribedSet = useMemo(() => new Set(subscribedSlugs), [subscribedSlugs]);
   const completedSet = useMemo(() => new Set(completedLessonIds), [completedLessonIds]);
   const wishlistSet = useMemo(() => new Set(wishlistSlugs), [wishlistSlugs]);
   const isGuest = !userFirstName;
 
-  const hasAccess = (slug: string) => hasActiveSubscription || purchasedSet.has(slug);
+  const hasAccess = (slug: string) => subscribedSet.has(slug) || purchasedSet.has(slug);
 
   const normalizedQuery = query.trim().toLowerCase();
   const filteredCourses = useMemo(() => {
@@ -82,7 +95,15 @@ function DashboardInner({
     );
   }, [courses, activeCategory, normalizedQuery]);
 
-  const visibleCourses = filteredCourses.slice(0, visibleCount);
+  const sortedCourses = useMemo(() => {
+    const arr = [...filteredCourses];
+    if (sort === 'popular') arr.sort((a, b) => b.studentsCount - a.studentsCount);
+    else if (sort === 'cheap') arr.sort((a, b) => a.priceMinor - b.priceMinor);
+    else if (sort === 'expensive') arr.sort((a, b) => b.priceMinor - a.priceMinor);
+    return arr;
+  }, [filteredCourses, sort]);
+
+  const visibleCourses = sortedCourses.slice(0, visibleCount);
   const hasMore = filteredCourses.length > visibleCount;
 
   // Синхронизируем URL без навигации/перезапроса страницы — фильтр мгновенный,
@@ -142,7 +163,7 @@ function DashboardInner({
       overallProgressPercent: overall,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userFirstName, courses, purchasedSet, completedSet, certificatesCount, hasActiveSubscription]);
+  }, [userFirstName, courses, purchasedSet, subscribedSet, completedSet, certificatesCount]);
 
   return (
     <div className="container mx-auto px-4 py-8 sm:px-9 sm:py-10">
@@ -198,7 +219,27 @@ function DashboardInner({
         </div>
       </section>
 
-      {/* Сетка курсов — 2 колонки как в макете */}
+      {/* Счётчик результатов + сортировка */}
+      {filteredCourses.length > 0 ? (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <span className="text-sm text-muted-foreground">
+            {filteredCourses.length} {coursesWord(filteredCourses.length)}
+          </span>
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as SortKey)}
+            aria-label="Сортировка курсов"
+            className="h-9 rounded-md border border-border/60 bg-card/60 px-3 text-sm text-muted-foreground backdrop-blur focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <option value="default">По умолчанию</option>
+            <option value="popular">Сначала популярные</option>
+            <option value="cheap">Сначала дешевле</option>
+            <option value="expensive">Сначала дороже</option>
+          </select>
+        </div>
+      ) : null}
+
+      {/* Сетка курсов — адаптивная (2 колонки на sm, 3 на lg+) */}
       <section>
         {filteredCourses.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border bg-card/40 p-12 text-center text-muted-foreground backdrop-blur">
@@ -207,7 +248,7 @@ function DashboardInner({
               : 'В этой категории пока нет курсов. Загляните позже.'}
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {visibleCourses.map((course) => {
               const purchased = hasAccess(course.slug);
               const progress = purchased ? courseProgressPercent(course) : 0;
@@ -232,7 +273,7 @@ function DashboardInner({
           <button
             type="button"
             onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
-            className="inline-flex items-center gap-2 rounded-xl border border-primary/30 bg-transparent px-8 py-2.5 text-[13px] text-[#C4A8FF] transition-all hover:border-primary hover:bg-primary/10 hover:text-white"
+            className="inline-flex items-center gap-2 rounded-xl border border-primary/30 bg-transparent px-8 py-2.5 text-[13px] text-primary-light transition-all hover:border-primary hover:bg-primary/10 hover:text-white"
           >
             <RefreshCw className="size-3.5" aria-hidden />
             Загрузить ещё

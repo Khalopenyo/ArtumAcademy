@@ -24,7 +24,7 @@ export default function ContactsPage() {
             <MessageCircle className="size-6" />
           </div>
           <h1 className="mt-5 text-3xl font-bold tracking-tight">Контакты</h1>
-          <p className="mt-2 text-sm text-[#C4A8FF]/70">
+          <p className="mt-2 text-sm text-primary-light/70">
             Напишите — отвечаем в рабочие часы по МСК.
           </p>
         </div>

@@ -1,9 +1,9 @@
 import { getPublishedCourses } from '@/server/queries/catalog';
 import {
-  getMyActiveSubscription,
   getMyCertificates,
   getMyCompletedLessonIds,
   getMyPurchasedCourseSlugs,
+  getMySubscribedCourseSlugs,
   getMyWishlistSlugs,
 } from '@/server/queries/commerce';
 import { getCurrentUser } from '@/server/queries/auth';
@@ -27,7 +27,7 @@ export default async function DashboardPage() {
     wishlistSlugs,
     completedLessonIds,
     certificates,
-    activeSubscription,
+    subscribedSlugs,
   ] = await Promise.all([
     getPublishedCourses(),
     getCurrentUser(),
@@ -35,7 +35,7 @@ export default async function DashboardPage() {
     getMyWishlistSlugs(),
     getMyCompletedLessonIds(),
     getMyCertificates(),
-    getMyActiveSubscription(),
+    getMySubscribedCourseSlugs(),
   ]);
 
   return (
@@ -46,7 +46,7 @@ export default async function DashboardPage() {
       wishlistSlugs={Array.from(wishlistSlugs)}
       completedLessonIds={Array.from(completedLessonIds)}
       certificatesCount={certificates.length}
-      hasActiveSubscription={!!activeSubscription}
+      subscribedSlugs={Array.from(subscribedSlugs)}
     />
   );
 }

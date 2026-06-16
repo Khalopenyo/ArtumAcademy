@@ -28,6 +28,11 @@ interface CourseRow {
   cover_url: string | null;
   published: boolean;
   order_index: number;
+  author_name: string | null;
+  author_title: string | null;
+  author_bio: string | null;
+  author_avatar_url: string | null;
+  learning_outcomes: string[] | null;
 }
 
 interface ModuleRow {
@@ -66,6 +71,11 @@ function rowToCourse(row: CourseRow, modules: Module[] = []): Course {
     coverGradient: row.cover_gradient,
     coverUrl: row.cover_url,
     published: row.published,
+    authorName: row.author_name,
+    authorTitle: row.author_title,
+    authorBio: row.author_bio,
+    authorAvatarUrl: row.author_avatar_url,
+    learningOutcomes: row.learning_outcomes ?? [],
     modules,
     // Legacy mock-fields — больше не используются для real auth,
     // но интерфейс Course требует их (определены в mock/courses.ts).
