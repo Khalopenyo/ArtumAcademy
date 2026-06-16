@@ -89,7 +89,7 @@ function RegisterInner() {
               <MailCheck className="size-6" />
             </div>
             <h1 className="mt-5 text-2xl font-bold tracking-tight sm:text-3xl">Подтвердите почту</h1>
-            <p className="mt-2 text-sm text-[#C4A8FF]/70">
+            <p className="mt-2 text-sm text-primary-light/70">
               Мы отправили код на <span className="text-foreground">{email}</span>. Введите его, чтобы
               завершить регистрацию.
             </p>
@@ -144,7 +144,7 @@ function RegisterInner() {
                     else setError(res.error);
                   })
                 }
-                className="text-primary transition-colors hover:text-[#C4A8FF] disabled:opacity-50"
+                className="text-primary transition-colors hover:text-primary-light disabled:opacity-50"
               >
                 Отправить ещё раз
               </button>
@@ -167,7 +167,7 @@ function RegisterInner() {
             <UserPlus className="size-6" />
           </div>
           <h1 className="mt-5 text-2xl font-bold tracking-tight sm:text-3xl">Регистрация</h1>
-          <p className="mt-2 text-sm text-[#C4A8FF]/70">
+          <p className="mt-2 text-sm text-primary-light/70">
             Создайте аккаунт, чтобы покупать курсы и получать сертификаты
           </p>
         </div>
@@ -255,7 +255,7 @@ function RegisterInner() {
           Уже есть аккаунт?{' '}
           <Link
             href={next === '/' ? '/login' : `/login?next=${encodeURIComponent(next)}`}
-            className="font-medium text-primary transition-colors hover:text-[#C4A8FF]"
+            className="font-medium text-primary transition-colors hover:text-primary-light"
           >
             Войти
           </Link>

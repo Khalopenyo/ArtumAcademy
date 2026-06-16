@@ -36,18 +36,18 @@ export function Hero({ userFirstName }: HeroProps) {
       />
 
       <div className="relative max-w-2xl">
-        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#C4A8FF]">
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-primary-light">
           <Sparkles className="size-3.5" aria-hidden />
           {userFirstName ? `Привет, ${userFirstName}` : 'Онлайн-академия'}
         </span>
         <h1 className="mt-4 text-2xl font-extrabold leading-[1.15] tracking-tight sm:text-4xl">
           Создавай. Снимай.
           <br />
-          <span className="bg-gradient-to-r from-[#E8DEFF] to-primary bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-primary-lighter to-primary bg-clip-text text-transparent">
             Монетизируй навыки.
           </span>
         </h1>
-        <p className="mt-4 max-w-lg text-sm leading-relaxed text-[#C4A8FF]/75 sm:text-base">
+        <p className="mt-4 max-w-lg text-sm leading-relaxed text-primary-light/75 sm:text-base">
           Видеокурсы по нейросетям, фото, видео, монтажу, дизайну, визуалу
           и копирайтингу — от практиков индустрии.
         </p>
@@ -71,7 +71,7 @@ export function Hero({ userFirstName }: HeroProps) {
           )}
           <a
             href="#catalog"
-            className="inline-flex items-center gap-2 rounded-xl border border-primary/30 bg-transparent px-5 py-2.5 text-sm font-medium text-[#C4A8FF] transition-all hover:border-primary hover:text-white"
+            className="inline-flex items-center gap-2 rounded-xl border border-primary/30 bg-transparent px-5 py-2.5 text-sm font-medium text-primary-light transition-all hover:border-primary hover:text-white"
           >
             <Eye className="size-4" aria-hidden />
             Смотреть каталог

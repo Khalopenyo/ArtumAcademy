@@ -92,7 +92,7 @@ function LoginInner() {
             {mode === 'code' ? <Mail className="size-6" /> : <LogIn className="size-6" />}
           </div>
           <h1 className="mt-5 text-2xl font-bold tracking-tight sm:text-3xl">Вход в Artum</h1>
-          <p className="mt-2 text-sm text-[#C4A8FF]/70">
+          <p className="mt-2 text-sm text-primary-light/70">
             {mode === 'password'
               ? 'Введите email и пароль, чтобы продолжить обучение'
               : codeSent
@@ -125,7 +125,7 @@ function LoginInner() {
                 <Label htmlFor="password" className="text-xs uppercase tracking-wider text-muted-foreground">
                   Пароль
                 </Label>
-                <Link href="/forgot-password" className="text-xs text-primary transition-colors hover:text-[#C4A8FF]">
+                <Link href="/forgot-password" className="text-xs text-primary transition-colors hover:text-primary-light">
                   Забыли?
                 </Link>
               </div>
@@ -246,7 +246,7 @@ function LoginInner() {
                     else setError(res.error);
                   })
                 }
-                className="text-primary transition-colors hover:text-[#C4A8FF] disabled:opacity-50"
+                className="text-primary transition-colors hover:text-primary-light disabled:opacity-50"
               >
                 Отправить ещё раз
               </button>
@@ -258,7 +258,7 @@ function LoginInner() {
           Нет аккаунта?{' '}
           <Link
             href={next === '/' ? '/register' : `/register?next=${encodeURIComponent(next)}`}
-            className="font-medium text-primary transition-colors hover:text-[#C4A8FF]"
+            className="font-medium text-primary transition-colors hover:text-primary-light"
           >
             Зарегистрироваться
           </Link>

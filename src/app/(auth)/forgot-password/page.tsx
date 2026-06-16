@@ -43,7 +43,7 @@ export default function ForgotPasswordPage() {
               <KeyRound className="size-6" />
             </div>
             <h1 className="mt-5 text-2xl font-bold tracking-tight sm:text-3xl">Проверьте почту</h1>
-            <p className="mt-2 text-sm text-[#C4A8FF]/70">
+            <p className="mt-2 text-sm text-primary-light/70">
               Если <span className="text-foreground">{sentTo}</span> зарегистрирован, мы отправили
               ссылку для сброса пароля.
             </p>
@@ -76,7 +76,7 @@ export default function ForgotPasswordPage() {
             <KeyRound className="size-6" />
           </div>
           <h1 className="mt-5 text-2xl font-bold tracking-tight sm:text-3xl">Восстановление пароля</h1>
-          <p className="mt-2 text-sm text-[#C4A8FF]/70">
+          <p className="mt-2 text-sm text-primary-light/70">
             Введите email — мы отправим ссылку для сброса
           </p>
         </div>
@@ -117,7 +117,7 @@ export default function ForgotPasswordPage() {
 
         <p className="text-center text-sm text-muted-foreground">
           Вспомнили пароль?{' '}
-          <Link href="/login" className="font-medium text-primary transition-colors hover:text-[#C4A8FF]">
+          <Link href="/login" className="font-medium text-primary transition-colors hover:text-primary-light">
             Войти
           </Link>
         </p>

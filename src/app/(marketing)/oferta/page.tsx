@@ -20,7 +20,7 @@ export default function OfertaPage() {
     <div className="container mx-auto max-w-3xl px-4 py-10 sm:py-14">
       <GlassCard className="space-y-6 p-7 sm:p-10">
         <header>
-          <div className="text-xs uppercase tracking-widest text-[#C4A8FF]">Договор-оферта</div>
+          <div className="text-xs uppercase tracking-widest text-primary-light">Договор-оферта</div>
           <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
             Публичная оферта
           </h1>

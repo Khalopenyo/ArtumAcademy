@@ -30,6 +30,8 @@
     /* Акцент — фиолетовый Artum */
     --primary: 271 91% 65%;
     --primary-foreground: 0 0% 100%;
+    --primary-light: 259 100% 83%; /* #C4A8FF — светлый акцент */
+    --primary-lighter: 258 100% 94%; /* #E8DEFF — самый светлый акцент */
 
     --secondary: 240 9% 14%;
     --secondary-foreground: 0 0% 100%;
@@ -58,6 +60,12 @@
     --tag-visual: 330 81% 60%;      /* #EC4899 */
     --tag-copy: 173 80% 40%;        /* #14B8A6 */
   }
+}
+
+/* Фирменное свечение — токен-утилита взамен повторяющегося
+   shadow-[0_0_24px_rgba(168,85,247,.35)] по всему коду. */
+.glow-primary {
+  box-shadow: 0 0 24px rgba(168, 85, 247, 0.35);
 }
 
 @layer base {

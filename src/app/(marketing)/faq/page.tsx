@@ -59,7 +59,7 @@ export default function FaqPage() {
           <HelpCircle className="size-7" />
         </div>
         <h1 className="mt-5 text-3xl font-bold tracking-tight">Частые вопросы</h1>
-        <p className="mt-2 text-sm text-[#C4A8FF]/70">Не нашли ответ? Напишите на support@artumacademy.ru</p>
+        <p className="mt-2 text-sm text-primary-light/70">Не нашли ответ? Напишите на support@artumacademy.ru</p>
       </div>
 
       <GlassCard className="mt-8 p-2 sm:p-4">

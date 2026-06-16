@@ -54,7 +54,7 @@ export default function ResetPasswordPage() {
             <LockKeyhole className="size-6" />
           </div>
           <h1 className="mt-5 text-2xl font-bold tracking-tight sm:text-3xl">Новый пароль</h1>
-          <p className="mt-2 text-sm text-[#C4A8FF]/70">
+          <p className="mt-2 text-sm text-primary-light/70">
             Придумайте новый пароль для вашего аккаунта
           </p>
         </div>
