@@ -106,12 +106,6 @@ async function assertLessonAccess(userId: string, lessonId: string): Promise<Act
   return decision.allowed ? { ok: true } : { ok: false, error: 'Нет доступа к этому курсу' };
 }
 
-/** Цены подписки (копейки) — синхронизировано со store SUBSCRIPTION_PRICES */
-const SUBSCRIPTION_PRICES = {
-  monthly: 99_000, // 990 ₽/мес
-  yearly: 990_000, // 9 900 ₽/год
-} as const;
-
 // ────────────────────────────────────────────────────────────────────
 // BUY COURSE
 // ────────────────────────────────────────────────────────────────────
@@ -141,6 +135,7 @@ async function startCheckout(opts: {
   description: string;
   kind: 'course' | 'subscription';
   plan?: 'monthly' | 'yearly';
+  subscriptionPlanId?: string;
 }): Promise<ActionResult<CheckoutResult>> {
   const admin = createAdminClient();
 
@@ -174,6 +169,7 @@ async function startCheckout(opts: {
         kind: opts.kind,
         ...(opts.courseId ? { courseId: opts.courseId } : {}),
         ...(opts.plan ? { plan: opts.plan } : {}),
+        ...(opts.subscriptionPlanId ? { subscriptionPlanId: opts.subscriptionPlanId } : {}),
       },
       idempotenceKey: payment.id,
       receipt: { customerEmail: opts.userEmail, itemDescription: opts.description },
@@ -470,6 +466,7 @@ export async function toggleWishlistAction(courseSlug: string): Promise<ActionRe
  * подписка активируется вебхуком после успешной оплаты.
  */
 export async function buySubscriptionAction(
+  planId: string,
   period: 'monthly' | 'yearly',
 ): Promise<ActionResult<CheckoutResult>> {
   const user = await getCurrentUser();
@@ -478,6 +475,9 @@ export async function buySubscriptionAction(
   if (period !== 'monthly' && period !== 'yearly') {
     return { ok: false, error: 'Невалидный период подписки' };
   }
+  if (!z.string().uuid().safeParse(planId).success) {
+    return { ok: false, error: 'Невалидный план' };
+  }
   if (!yookassaConfigured()) {
     return { ok: false, error: 'Приём оплаты временно недоступен. Попробуйте позже.' };
   }
@@ -485,18 +485,34 @@ export async function buySubscriptionAction(
   const active = await getMyActiveSubscription();
   if (active) return { ok: false, error: 'У вас уже есть активная подписка' };
 
+  // Цена и план — СТРОГО из БД (клиенту не доверяем). Сумма потом сверяется
+  // вебхуком с тем, что вернёт ЮKassa (анти-подмена).
+  const admin = createAdminClient();
+  const { data: plan } = await admin
+    .from('subscription_plans')
+    .select('id, name, price_monthly_minor, price_yearly_minor, published')
+    .eq('id', planId)
+    .maybeSingle();
+  if (!plan || plan.published !== true) {
+    return { ok: false, error: 'План не найден или снят с публикации' };
+  }
+  const amountMinor = period === 'monthly' ? plan.price_monthly_minor : plan.price_yearly_minor;
+  if (amountMinor <= 0) {
+    return { ok: false, error: 'Этот период недоступен для выбранного плана' };
+  }
+
   return startCheckout({
     userId: user.id,
     userEmail: user.email,
-    amountMinor: SUBSCRIPTION_PRICES[period],
+    amountMinor,
     discountMinor: 0,
     promocode: null,
     method: 'subscription',
     courseId: null,
-    description:
-      period === 'monthly' ? 'Подписка Artum Academy: 1 месяц' : 'Подписка Artum Academy: 1 год',
+    description: `Подписка «${plan.name}»: ${period === 'monthly' ? '1 месяц' : '1 год'}`,
     kind: 'subscription',
     plan: period,
+    subscriptionPlanId: planId,
   });
 }
 

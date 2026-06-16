@@ -1,47 +1,49 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Check, Infinity as InfinityIcon, ShieldCheck, Zap } from 'lucide-react';
+import { Check, Layers, ShieldCheck, Sparkles } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { formatPrice } from '@/lib/mock/courses';
-import {
-  buySubscriptionAction,
-  cancelSubscriptionAction,
-} from '@/server/actions/commerce';
+import { buySubscriptionAction, cancelSubscriptionAction } from '@/server/actions/commerce';
 import type { SubscriptionRecord } from '@/server/queries/commerce';
 import { cn } from '@/lib/utils';
 
-/** Цены тарифов подписки (копейки) — синхронизировано с server action */
-const SUBSCRIPTION_PRICES = {
-  monthly: 99_000,
-  yearly: 990_000,
-} as const;
+export interface PlanView {
+  id: string;
+  name: string;
+  description: string;
+  priceMonthlyMinor: number;
+  priceYearlyMinor: number;
+  isAllCourses: boolean;
+  courseTitles: string[];
+}
 
 interface SubscribeClientProps {
   isLoggedIn: boolean;
   activeSubscription: SubscriptionRecord | null;
+  plans: PlanView[];
 }
 
-export function SubscribeClient({ isLoggedIn, activeSubscription }: SubscribeClientProps) {
+export function SubscribeClient({ isLoggedIn, activeSubscription, plans }: SubscribeClientProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [period, setPeriod] = useState<'monthly' | 'yearly'>('monthly');
 
-  function handleBuy(period: 'monthly' | 'yearly') {
+  function handleBuy(planId: string) {
     if (!isLoggedIn) {
       router.push(`/login?next=${encodeURIComponent('/subscribe')}`);
       return;
     }
     startTransition(async () => {
-      const res = await buySubscriptionAction(period);
+      const res = await buySubscriptionAction(planId, period);
       if (!res.ok) {
         toast.error(res.error);
         return;
       }
-      // Редирект на оплату ЮKassa — подписка активируется вебхуком после оплаты.
       if (res.data?.confirmationUrl) {
         window.location.href = res.data.confirmationUrl;
         return;
@@ -67,17 +69,16 @@ export function SubscribeClient({ isLoggedIn, activeSubscription }: SubscribeCli
     <div className="container mx-auto px-4 py-10 sm:py-14">
       <div className="mx-auto max-w-3xl text-center">
         <div className="inline-flex size-12 items-center justify-center rounded-2xl bg-primary/15 text-primary">
-          <InfinityIcon className="size-6" aria-hidden />
+          <Layers className="size-6" aria-hidden />
         </div>
-        <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
-          Подписка на все курсы Artum
-        </h1>
+        <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Подписка</h1>
         <p className="mt-3 text-base text-muted-foreground sm:text-lg">
-          Один платёж — доступ ко всему каталогу. Учитесь без ограничений и переплат за каждый курс.
+          Оформите подписку и получите доступ к набору курсов. Один платёж за период — учитесь без
+          переплат за каждый курс.
         </p>
       </div>
 
-      {/* Активная подписка — отдельный блок */}
+      {/* Активная подписка */}
       {activeSubscription ? (
         <section className="mx-auto mt-8 max-w-2xl rounded-2xl border border-primary/30 bg-primary/5 p-6 backdrop-blur-xl">
           <div className="flex items-start gap-4">
@@ -87,8 +88,7 @@ export function SubscribeClient({ isLoggedIn, activeSubscription }: SubscribeCli
             <div className="flex-1">
               <h2 className="text-lg font-semibold">Подписка активна</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Тариф «{activeSubscription.period === 'monthly' ? 'Месячный' : 'Годовой'}» ·{' '}
-                действует до{' '}
+                Период «{activeSubscription.period === 'monthly' ? 'Месяц' : 'Год'}» · действует до{' '}
                 <span className="text-foreground">
                   {new Date(activeSubscription.expiresAt).toLocaleDateString('ru-RU', {
                     day: 'numeric',
@@ -111,144 +111,172 @@ export function SubscribeClient({ isLoggedIn, activeSubscription }: SubscribeCli
         </section>
       ) : null}
 
-      {/* Тарифы */}
-      <section className="mx-auto mt-10 grid max-w-4xl gap-6 sm:grid-cols-2">
-        <PlanCard
-          period="monthly"
-          title="Месяц"
-          price={SUBSCRIPTION_PRICES.monthly}
-          subtitle="990 ₽ каждый месяц"
-          features={[
-            'Доступ ко всему каталогу из 7 категорий',
-            'Новые курсы добавляются автоматически',
-            'Сертификаты PDF на каждый завершённый курс',
-            'Отмена в любой момент',
-          ]}
-          ctaLabel={pending ? 'Покупаем…' : 'Оформить за 990 ₽'}
-          onClick={() => handleBuy('monthly')}
-          disabled={pending || !!activeSubscription}
-          highlight={false}
-        />
-        <PlanCard
-          period="yearly"
-          title="Год"
-          price={SUBSCRIPTION_PRICES.yearly}
-          subtitle="9 900 ₽ — выгода 20%"
-          features={[
-            'Всё что в месячном тарифе',
-            'Выгода 2 376 ₽ за год',
-            'Подходит для системного обучения',
-            'Можно отменить — доступ до конца года',
-          ]}
-          ctaLabel={pending ? 'Покупаем…' : 'Оформить за 9 900 ₽'}
-          onClick={() => handleBuy('yearly')}
-          disabled={pending || !!activeSubscription}
-          highlight
-        />
-      </section>
+      {plans.length === 0 ? (
+        <div className="mx-auto mt-10 max-w-2xl rounded-2xl border border-dashed border-border bg-card/40 p-12 text-center text-muted-foreground backdrop-blur">
+          Планы подписки скоро появятся.
+        </div>
+      ) : (
+        <>
+          {/* Переключатель периода */}
+          <div className="mx-auto mt-10 flex w-fit items-center gap-1 rounded-full border border-border/60 bg-card/60 p-1 backdrop-blur">
+            <PeriodTab active={period === 'monthly'} onClick={() => setPeriod('monthly')}>
+              Месяц
+            </PeriodTab>
+            <PeriodTab active={period === 'yearly'} onClick={() => setPeriod('yearly')}>
+              Год · выгоднее
+            </PeriodTab>
+          </div>
 
-      <p className="mx-auto mt-6 flex max-w-2xl items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
+          {/* Карточки планов */}
+          <section
+            className={cn(
+              'mx-auto mt-8 grid max-w-5xl gap-6',
+              plans.length === 1 ? 'max-w-md' : 'sm:grid-cols-2 lg:grid-cols-3',
+            )}
+          >
+            {plans.map((p) => {
+              const priceMinor =
+                period === 'monthly' ? p.priceMonthlyMinor : p.priceYearlyMinor;
+              const unavailable = priceMinor <= 0;
+              return (
+                <PlanCard
+                  key={p.id}
+                  plan={p}
+                  priceMinor={priceMinor}
+                  period={period}
+                  ctaLabel={
+                    pending
+                      ? 'Покупаем…'
+                      : unavailable
+                        ? 'Период недоступен'
+                        : `Оформить за ${formatPrice(priceMinor)}`
+                  }
+                  onClick={() => handleBuy(p.id)}
+                  disabled={pending || unavailable || !!activeSubscription}
+                />
+              );
+            })}
+          </section>
+        </>
+      )}
+
+      <p className="mx-auto mt-8 flex max-w-2xl items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
         <ShieldCheck className="size-3.5 text-emerald-500/80" aria-hidden />
         Безопасная оплата через ЮKassa · чек по 54-ФЗ · отмена в любой момент
       </p>
 
-      {/* Альтернатива — купить курсы по-отдельности */}
+      {/* Альтернатива — отдельная покупка курса */}
       <section className="mx-auto mt-10 max-w-2xl text-center">
         <p className="text-sm text-muted-foreground">
-          Не уверены, что хотите подписку?{' '}
+          Нужен только один курс?{' '}
           <Link href="/" className="text-primary hover:underline">
-            Купите один курс отдельно
-          </Link>
+            Купите его отдельно
+          </Link>{' '}
+          — это отдельная разовая покупка, без подписки.
         </p>
       </section>
     </div>
   );
 }
 
+function PeriodTab({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'rounded-full px-4 py-1.5 text-sm font-medium transition-colors',
+        active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
 function PlanCard({
+  plan,
+  priceMinor,
   period,
-  title,
-  price,
-  subtitle,
-  features,
   ctaLabel,
   onClick,
   disabled,
-  highlight,
 }: {
+  plan: PlanView;
+  priceMinor: number;
   period: 'monthly' | 'yearly';
-  title: string;
-  price: number;
-  subtitle: string;
-  features: string[];
   ctaLabel: string;
   onClick: () => void;
   disabled: boolean;
-  highlight: boolean;
 }) {
   return (
-    <div className="relative">
-      {highlight ? (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -inset-px -z-10 rounded-2xl opacity-70 blur-2xl"
-          style={{
-            background:
-              'radial-gradient(circle at 50% 0%, rgba(168, 85, 247, 0.4), transparent 70%)',
-          }}
-        />
-      ) : null}
-      <div
-        className={cn(
-          'relative flex h-full flex-col gap-5 rounded-2xl border bg-card/60 p-6 backdrop-blur-xl sm:p-8',
-          highlight
-            ? 'border-primary/60 shadow-[0_0_40px_rgba(168,85,247,0.15)]'
-            : 'border-border/60',
-        )}
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h2 className="text-xl font-bold">{title}</h2>
-            <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
-          </div>
-          {highlight ? (
+    <div className="relative flex h-full flex-col gap-4 rounded-2xl border border-border/60 bg-card/60 p-6 backdrop-blur-xl">
+      <div>
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl font-bold">{plan.name}</h2>
+          {plan.isAllCourses ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-0.5 text-[11px] font-medium text-primary">
-              <Zap className="size-3" aria-hidden /> Популярный
+              <Sparkles className="size-3" aria-hidden /> Всё
             </span>
           ) : null}
         </div>
-
-        <div className="bg-gradient-to-br from-white to-[#E8DEFF] bg-clip-text text-3xl font-bold text-transparent">
-          {formatPrice(price)}
-          <span className="ml-1 bg-none text-sm font-normal text-muted-foreground [-webkit-text-fill-color:initial]">
-            / {period === 'monthly' ? 'мес' : 'год'}
-          </span>
-        </div>
-
-        <ul className="space-y-2 text-sm">
-          {features.map((f, i) => (
-            <li key={i} className="flex items-start gap-2">
-              <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
-              <span className="text-muted-foreground">{f}</span>
-            </li>
-          ))}
-        </ul>
-
-        <Button
-          size="lg"
-          onClick={onClick}
-          disabled={disabled}
-          className={cn(
-            'mt-auto w-full',
-            highlight
-              ? 'bg-primary text-primary-foreground shadow-[0_0_24px_rgba(168,85,247,0.35)] hover:bg-primary/90'
-              : 'border border-border/60 bg-background/40 backdrop-blur',
-          )}
-          variant={highlight ? 'default' : 'outline'}
-        >
-          {ctaLabel}
-        </Button>
+        {plan.description ? (
+          <p className="mt-1 text-xs text-muted-foreground">{plan.description}</p>
+        ) : null}
       </div>
+
+      <div className="bg-gradient-to-br from-white to-primary-lighter bg-clip-text text-3xl font-bold text-transparent">
+        {priceMinor > 0 ? formatPrice(priceMinor) : '—'}
+        <span className="ml-1 bg-none text-sm font-normal text-muted-foreground [-webkit-text-fill-color:initial]">
+          / {period === 'monthly' ? 'мес' : 'год'}
+        </span>
+      </div>
+
+      <ul className="space-y-2 text-sm">
+        {plan.isAllCourses ? (
+          <>
+            <Feature>Доступ ко всему каталогу курсов</Feature>
+            <Feature>Новые курсы добавляются автоматически</Feature>
+          </>
+        ) : (
+          <>
+            {plan.courseTitles.slice(0, 6).map((t, i) => (
+              <Feature key={i}>{t}</Feature>
+            ))}
+            {plan.courseTitles.length > 6 ? (
+              <li className="pl-6 text-xs text-muted-foreground">
+                и ещё {plan.courseTitles.length - 6}
+              </li>
+            ) : null}
+            {plan.courseTitles.length === 0 ? (
+              <li className="text-xs text-muted-foreground">Курсы скоро добавят в план</li>
+            ) : null}
+          </>
+        )}
+        <Feature>Сертификаты PDF за завершённые курсы</Feature>
+        <Feature>Отмена в любой момент</Feature>
+      </ul>
+
+      <Button size="lg" onClick={onClick} disabled={disabled} className="mt-auto w-full">
+        {ctaLabel}
+      </Button>
     </div>
+  );
+}
+
+function Feature({ children }: { children: React.ReactNode }) {
+  return (
+    <li className="flex items-start gap-2">
+      <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
+      <span className="text-muted-foreground">{children}</span>
+    </li>
   );
 }

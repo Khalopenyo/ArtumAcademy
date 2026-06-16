@@ -92,8 +92,9 @@ export async function fulfillYookassaPayment(input: FulfillInput): Promise<Fulfi
   if (row.course_id) {
     await grantCourse(admin, row);
   } else {
-    const plan = input.metadata?.plan === 'yearly' ? 'yearly' : 'monthly';
-    await grantSubscription(admin, row, plan);
+    const period = input.metadata?.plan === 'yearly' ? 'yearly' : 'monthly';
+    const planId = input.metadata?.subscriptionPlanId ?? null;
+    await grantSubscription(admin, row, period, planId);
   }
   return { ok: true, info: 'fulfilled' };
 }
@@ -145,10 +146,11 @@ async function grantCourse(admin: AdminClient, pay: PaymentRow): Promise<void> {
 async function grantSubscription(
   admin: AdminClient,
   pay: PaymentRow,
-  plan: 'monthly' | 'yearly',
+  period: 'monthly' | 'yearly',
+  planId: string | null,
 ): Promise<void> {
   const now = new Date();
-  const expiresAt = new Date(now.getTime() + SUBSCRIPTION_DAYS[plan] * 86_400_000);
+  const expiresAt = new Date(now.getTime() + SUBSCRIPTION_DAYS[period] * 86_400_000);
 
   // Не плодим активные подписки: если уже есть активная — не вставляем вторую.
   const { data: active } = await admin
@@ -161,15 +163,63 @@ async function grantSubscription(
     .maybeSingle();
 
   if (!active) {
-    await admin.from('subscriptions').insert({
-      user_id: pay.user_id,
-      tier: 'all_courses',
-      started_at: now.toISOString(),
-      expires_at: expiresAt.toISOString(),
-      amount_minor: pay.amount_minor,
-      period: plan,
-      cancelled: false,
-    });
+    // Определяем «всё/набор» и состав курсов из плана (для снимка).
+    // planId отсутствует (legacy-путь) → доступ ко всему (как раньше).
+    // planId ЕСТЬ, но план не найден (удалён во время оплаты) → НЕ выдаём весь
+    // каталог: anti-over-grant, лучше выдать пустой набор, чем чужие курсы.
+    let isAllCourses = !planId;
+    let courseIds: string[] = [];
+    if (planId) {
+      const { data: plan } = await admin
+        .from('subscription_plans')
+        .select('is_all_courses')
+        .eq('id', planId)
+        .maybeSingle();
+      if (plan) {
+        isAllCourses = (plan as { is_all_courses: boolean }).is_all_courses;
+        if (!isAllCourses) {
+          const { data: links } = await admin
+            .from('subscription_plan_courses')
+            .select('course_id')
+            .eq('plan_id', planId);
+          courseIds = ((links ?? []) as Array<{ course_id: string }>).map((l) => l.course_id);
+        }
+      } else {
+        logger.error(
+          { paymentId: pay.id, planId },
+          'grantSubscription: план не найден — выдаю подписку БЕЗ доступа к каталогу (анти-over-grant)',
+        );
+      }
+    }
+
+    const { data: sub, error: subErr } = await admin
+      .from('subscriptions')
+      .insert({
+        user_id: pay.user_id,
+        tier: 'all_courses', // legacy-поле (CHECK), доступ считается по plan_id/is_all_courses
+        plan_id: planId,
+        is_all_courses: isAllCourses,
+        started_at: now.toISOString(),
+        expires_at: expiresAt.toISOString(),
+        amount_minor: pay.amount_minor,
+        period,
+        cancelled: false,
+      })
+      .select('id')
+      .single();
+
+    if (subErr) {
+      logger.error({ err: subErr, paymentId: pay.id }, 'grantSubscription: insert failed');
+    } else if (sub && !isAllCourses && courseIds.length > 0) {
+      // Замораживаем набор курсов в подписку — доступ сохраняется до конца срока,
+      // даже если админ потом отредактирует план.
+      const { error: snapErr } = await admin
+        .from('subscription_courses')
+        .insert(courseIds.map((cid) => ({ subscription_id: sub.id, course_id: cid })));
+      if (snapErr) {
+        logger.error({ err: snapErr, subscriptionId: sub.id }, 'grantSubscription: snapshot failed');
+      }
+    }
   }
 
   await auditLog({
@@ -177,11 +227,16 @@ async function grantSubscription(
     action: 'subscription.purchased',
     entityType: 'payment',
     entityId: pay.id,
-    meta: { amount_minor: pay.amount_minor, period: plan, expires_at: expiresAt.toISOString() },
+    meta: {
+      amount_minor: pay.amount_minor,
+      period,
+      plan_id: planId,
+      expires_at: expiresAt.toISOString(),
+    },
   });
   await notify(pay.user_id, {
     type: 'subscription',
     title: 'Подписка оформлена',
-    body: 'Оплата прошла — доступ ко всем курсам открыт.',
+    body: 'Оплата прошла — подписка активна.',
   });
 }

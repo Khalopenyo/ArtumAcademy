@@ -53,7 +53,7 @@ export default function SubscriptionPlansClient({ initialPlans }: { initialPlans
         </div>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xl">
-          <table className="w-full text-sm">
+          <table className="hidden w-full text-sm md:table">
             <thead className="bg-card/40 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th className="px-5 py-3 text-left font-medium">План</th>
@@ -109,6 +109,53 @@ export default function SubscriptionPlansClient({ initialPlans }: { initialPlans
               ))}
             </tbody>
           </table>
+
+          {/* Mobile: карточки */}
+          <ul className="divide-y divide-border/40 md:hidden">
+            {plans.map((p) => (
+              <li key={p.id} className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate font-medium">{p.name}</span>
+                      {p.published === false ? (
+                        <span className="shrink-0 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-500">
+                          Черновик
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+                      {p.description || '—'}
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 gap-1">
+                    <Button asChild variant="ghost" size="sm" aria-label={`Редактировать ${p.name}`}>
+                      <Link href={`/admin/subscription-plans/${p.id}`}>
+                        <Edit className="size-4" aria-hidden />
+                      </Link>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      aria-label={`Удалить ${p.name}`}
+                      onClick={() => handleDelete(p.id, p.name)}
+                    >
+                      <Trash2 className="size-4 text-destructive" aria-hidden />
+                    </Button>
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+                  <span className="font-medium tabular-nums">
+                    {formatPrice(p.priceMonthlyMinor)}/мес · {formatPrice(p.priceYearlyMinor)}/год
+                  </span>
+                  <span className="text-muted-foreground">
+                    {p.isAllCourses ? 'Все курсы' : `${p.courseCount} курсов`}
+                  </span>
+                  <span className="text-muted-foreground">{p.activeSubscribers} подписч.</span>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>
