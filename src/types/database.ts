@@ -40,6 +40,39 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export interface Database {
   public: {
     Tables: {
+      reviews: {
+        Row: {
+          id: string;
+          course_id: string;
+          user_id: string;
+          author_name: string;
+          rating: number;
+          body: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          course_id: string;
+          user_id: string;
+          author_name?: string;
+          rating: number;
+          body?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          course_id?: string;
+          user_id?: string;
+          author_name?: string;
+          rating?: number;
+          body?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       notifications: {
         Row: {
           id: string;
@@ -241,6 +274,11 @@ export interface Database {
           cover_url: string | null;
           published: boolean;
           order_index: number;
+          author_name: string | null;
+          author_title: string | null;
+          author_bio: string | null;
+          author_avatar_url: string | null;
+          learning_outcomes: string[];
           created_at: string;
           updated_at: string;
         };
@@ -257,6 +295,11 @@ export interface Database {
           cover_url?: string | null;
           published?: boolean;
           order_index?: number;
+          author_name?: string | null;
+          author_title?: string | null;
+          author_bio?: string | null;
+          author_avatar_url?: string | null;
+          learning_outcomes?: string[];
           created_at?: string;
           updated_at?: string;
         };
@@ -273,6 +316,11 @@ export interface Database {
           cover_url?: string | null;
           published?: boolean;
           order_index?: number;
+          author_name?: string | null;
+          author_title?: string | null;
+          author_bio?: string | null;
+          author_avatar_url?: string | null;
+          learning_outcomes?: string[];
           created_at?: string;
           updated_at?: string;
         };
