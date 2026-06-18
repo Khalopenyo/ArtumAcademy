@@ -58,8 +58,29 @@ export function HeaderClient({ className, user, notifications }: HeaderClientPro
     return false;
   }
 
+  // Закрываем drawer при переходе на другой маршрут
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  // Пока drawer открыт — блокируем скролл body и закрываем по Escape
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [mobileOpen]);
+
   return (
-    <header
+    <>
+      <header
       className={cn(
         'sticky top-0 z-30 border-b border-border/40 bg-[#0A0618]/70 backdrop-blur-xl',
         'supports-[backdrop-filter]:bg-[#0A0618]/50',
@@ -81,7 +102,7 @@ export function HeaderClient({ className, user, notifications }: HeaderClientPro
                 <Link
                   href={item.href}
                   className={cn(
-                    'relative inline-flex h-16 items-center text-[13px] font-medium transition-colors',
+                    'relative inline-flex h-16 items-center text-sm font-medium transition-colors',
                     active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
                   )}
                   aria-current={active ? 'page' : undefined}
@@ -132,59 +153,105 @@ export function HeaderClient({ className, user, notifications }: HeaderClientPro
           aria-controls="mobile-nav-panel"
           onClick={() => setMobileOpen((v) => !v)}
           className={cn(
-            'inline-flex size-10 items-center justify-center rounded-md md:hidden',
+            'inline-flex size-11 items-center justify-center rounded-md md:hidden',
             'text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground',
           )}
         >
           {mobileOpen ? <X className="size-5" aria-hidden /> : <Menu className="size-5" aria-hidden />}
         </button>
       </nav>
+      </header>
 
-      {/* Mobile panel */}
-      {mobileOpen ? (
-        <div id="mobile-nav-panel" className="border-t border-border/40 bg-[#0A0618]/95 backdrop-blur md:hidden">
-          <div className="container mx-auto flex flex-col gap-1 px-4 py-3">
-            {NAV_ITEMS.map((item) => (
+      {/* Drawer вынесен из <header>: у шапки backdrop-filter, который иначе
+          становится containing-block для position:fixed и обрезает drawer
+          по высоте шапки. Здесь fixed считается от вьюпорта. */}
+      <div
+        aria-hidden
+        onClick={() => setMobileOpen(false)}
+        className={cn(
+          'fixed inset-0 z-40 bg-[#04020C]/60 backdrop-blur-sm transition-opacity duration-300 md:hidden',
+          mobileOpen ? 'opacity-100' : 'pointer-events-none opacity-0',
+        )}
+      />
+      <div
+        id="mobile-nav-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Меню"
+        className={cn(
+          'fixed inset-y-0 right-0 z-50 flex w-[82%] max-w-sm flex-col border-l border-border/60',
+          'bg-gradient-to-b from-[#15101F] to-[#0C0818] shadow-[-24px_0_60px_rgba(0,0,0,.5)]',
+          'transition-transform duration-300 [transition-timing-function:cubic-bezier(.4,0,.2,1)] md:hidden',
+          mobileOpen ? 'translate-x-0' : 'translate-x-full',
+        )}
+      >
+        <div className="flex items-center justify-between px-5 pb-2 pt-4">
+          <Logo className="text-[16px]" />
+          <button
+            type="button"
+            aria-label="Закрыть меню"
+            onClick={() => setMobileOpen(false)}
+            className="inline-flex size-11 items-center justify-center rounded-lg bg-secondary/60 text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <X className="size-5" aria-hidden />
+          </button>
+        </div>
+
+        <nav aria-label="Мобильная навигация" className="flex flex-col gap-1 px-3 py-2">
+          {NAV_ITEMS.map((item) => {
+            const active = isActive(item);
+            return (
               <Link
                 key={item.label}
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
-                className="rounded-md px-3 py-3 text-base font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                aria-current={active ? 'page' : undefined}
+                className={cn(
+                  'flex min-h-12 items-center justify-between rounded-xl px-4 text-base font-medium transition-colors',
+                  active
+                    ? 'bg-primary/15 text-primary-light'
+                    : 'text-foreground hover:bg-secondary/60',
+                )}
               >
                 {item.label}
+                <span aria-hidden className="text-muted-foreground">
+                  ›
+                </span>
               </Link>
-            ))}
-            <div className="my-2 h-px bg-border/40" />
-            {isGuest ? (
-              <div className="flex flex-col gap-2 px-3 py-2">
-                <Button asChild variant="outline" size="sm">
-                  <Link href="/register" onClick={() => setMobileOpen(false)}>
-                    Регистрация
-                  </Link>
-                </Button>
-                <Button asChild size="sm">
-                  <Link href="/login" onClick={() => setMobileOpen(false)}>
-                    Войти
-                  </Link>
-                </Button>
+            );
+          })}
+        </nav>
+
+        <div className="mt-auto flex flex-col gap-2.5 border-t border-border/40 p-5">
+          {isGuest ? (
+            <>
+              <Button asChild className="h-12 w-full text-sm">
+                <Link href="/register" onClick={() => setMobileOpen(false)}>
+                  Начать обучение
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="h-12 w-full text-sm">
+                <Link href="/login" onClick={() => setMobileOpen(false)}>
+                  Войти в аккаунт
+                </Link>
+              </Button>
+            </>
+          ) : (
+            <Link
+              href="/profile"
+              onClick={() => setMobileOpen(false)}
+              className="flex items-center gap-3 rounded-xl bg-secondary/40 p-3 transition-colors hover:bg-secondary/60"
+            >
+              <AvatarPill initials={user.initials} small />
+              <div className="min-w-0 text-sm">
+                <div className="truncate font-medium text-foreground">{user.name}</div>
+                <div className="truncate text-xs text-muted-foreground">{user.email}</div>
               </div>
-            ) : (
-              <Link
-                href="/profile"
-                onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-3 rounded-md px-3 py-3"
-              >
-                <AvatarPill initials={user.initials} small />
-                <div className="text-sm">
-                  <div className="font-medium text-foreground">{user.name}</div>
-                  <div className="text-xs text-muted-foreground">{user.email}</div>
-                </div>
-              </Link>
-            )}
-          </div>
+            </Link>
+          )}
         </div>
-      ) : null}
-    </header>
+      </div>
+    </>
   );
 }
 
@@ -233,7 +300,7 @@ function NotificationButton({ notifications }: { notifications: NotificationReco
           variant="ghost"
           size="icon"
           aria-label={`Уведомления (${unread} непрочитанных)`}
-          className="relative size-9 rounded-full hover:bg-secondary/60"
+          className="relative size-10 rounded-full hover:bg-secondary/60"
         >
           <Bell className="size-4" aria-hidden />
           {unread > 0 ? (
@@ -306,7 +373,7 @@ function UserMenu({ user }: { user: AuthUser }) {
         <button
           type="button"
           aria-label={`Меню пользователя — ${user.name}`}
-          className="inline-flex size-9 items-center justify-center rounded-full transition-opacity hover:opacity-80"
+          className="inline-flex size-10 items-center justify-center rounded-full transition-opacity hover:opacity-80"
         >
           <AvatarPill initials={user.initials} small />
         </button>
