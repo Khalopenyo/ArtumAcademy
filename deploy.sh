@@ -15,7 +15,10 @@ set -euo pipefail
 SERVER="root@5.42.100.106"
 KEY="$HOME/.ssh/artum_deploy"
 REMOTE_DIR="/var/www/artum"
-SSH_CMD="ssh -i $KEY -o IdentitiesOnly=yes"
+# ServerAlive* шлёт keepalive каждые 30с (до 10 мин тишины) — иначе sshd/NAT
+# рвёт сессию во время долгого тихого `npm ci`/`next build`, и деплой обрывается
+# на полпути (наблюдался «Connection closed by remote host»).
+SSH_CMD="ssh -i $KEY -o IdentitiesOnly=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -o TCPKeepAlive=yes"
 
 echo "→ [1/3] Синхронизация исходников на сервер…"
 rsync -az --delete \
