@@ -15,7 +15,7 @@ interface WishlistButtonProps {
   initialInList: boolean;
   /** Если пользователь не залогинен — клик редиректит на /login */
   isGuest: boolean;
-  size?: 'sm' | 'md';
+  size?: 'xs' | 'sm' | 'md';
   /** stop propagation/preventDefault when used inside <Link> wrapper */
   stopParentLink?: boolean;
   className?: string;
@@ -63,8 +63,8 @@ export function WishlistButton({
     });
   }
 
-  const dim = size === 'md' ? 'size-10' : 'size-8';
-  const iconDim = size === 'md' ? 'size-5' : 'size-4';
+  const dim = size === 'md' ? 'size-10' : size === 'xs' ? 'size-7' : 'size-8';
+  const iconDim = size === 'md' ? 'size-5' : size === 'xs' ? 'size-3.5' : 'size-4';
 
   return (
     <button

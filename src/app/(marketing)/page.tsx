@@ -8,7 +8,7 @@ import {
 } from '@/server/queries/commerce';
 import { getCurrentUser } from '@/server/queries/auth';
 
-import DashboardClient from './DashboardClient';
+import { DashboardClient } from './DashboardClient';
 
 /**
  * Главная (Server Component): тянет каталог опубликованных курсов из Supabase,
