@@ -217,7 +217,7 @@ function ProfileInner({
                       )}
                     />
                     <div className="flex-1 space-y-1">
-                      <h3 className="font-semibold">{course.title}</h3>
+                      <h3 className="line-clamp-1 font-semibold sm:line-clamp-2">{course.title}</h3>
                       <div className="text-xs text-muted-foreground">
                         {lessons} уроков · {formatDuration(duration)}
                       </div>
@@ -305,7 +305,7 @@ function ProfileInner({
             />
           ) : (
             <div className="overflow-hidden rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xl">
-              <table className="w-full text-sm">
+              <table className="hidden w-full text-sm md:table">
                 <thead className="bg-card/40 text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="px-5 py-3 text-left font-medium">Курс</th>
@@ -350,6 +350,44 @@ function ProfileInner({
                   })}
                 </tbody>
               </table>
+
+              {/* Mobile: карточки */}
+              <ul className="divide-y divide-border md:hidden">
+                {payments.map((p) => {
+                  const title =
+                    p.method === 'subscription'
+                      ? 'Подписка «Все курсы»'
+                      : p.courseSlug
+                        ? (slugToTitle.get(p.courseSlug) ?? p.courseSlug)
+                        : 'Платёж';
+                  return (
+                    <li key={p.id} className="p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        {p.courseSlug && p.method !== 'subscription' ? (
+                          <Link
+                            href={`/courses/${p.courseSlug}`}
+                            className="line-clamp-2 min-w-0 font-medium transition-colors hover:text-primary"
+                          >
+                            {title}
+                          </Link>
+                        ) : (
+                          <span className="line-clamp-2 min-w-0 font-medium">{title}</span>
+                        )}
+                        <span className="shrink-0 font-medium tabular-nums">
+                          {formatPrice(p.amountMinor)}
+                        </span>
+                      </div>
+                      <div className="mt-2 flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+                        <span>{new Date(p.paidAt).toLocaleDateString('ru-RU')}</span>
+                        <span aria-hidden>·</span>
+                        <span>
+                          {p.method === 'card' ? 'Карта' : p.method === 'sbp' ? 'СБП' : 'Подписка'}
+                        </span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
           )}
         </TabsContent>

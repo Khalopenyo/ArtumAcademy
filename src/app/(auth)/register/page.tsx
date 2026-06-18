@@ -221,7 +221,7 @@ function RegisterInner() {
               disabled={pending}
               className={inputCls}
             />
-            <p className="text-[11px] text-muted-foreground/70">Минимум 8 символов</p>
+            <p className="text-xs text-muted-foreground/70">Минимум 8 символов</p>
           </div>
 
           <div className="flex items-start gap-3 rounded-lg border border-border/50 bg-background/30 p-3 backdrop-blur">

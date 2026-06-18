@@ -35,7 +35,7 @@ export function UserStatsBlock({ stats, className }: UserStatsBlockProps) {
           <div className="bg-gradient-to-br from-white to-primary-lighter bg-clip-text text-2xl font-bold leading-none text-transparent sm:text-3xl">
             {item.value}
           </div>
-          <div className="mt-1.5 text-[11px] text-muted-foreground">{item.label}</div>
+          <div className="mt-1.5 text-xs text-muted-foreground">{item.label}</div>
         </div>
       ))}
     </div>

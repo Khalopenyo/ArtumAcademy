@@ -12,7 +12,7 @@ export const metadata = {
 export default function BlogPage() {
   return (
     <div className="container mx-auto flex min-h-[60vh] items-center justify-center px-4 py-12">
-      <GlassCard glow className="max-w-md p-10 text-center">
+      <GlassCard glow className="max-w-md p-6 text-center sm:p-10">
         <div
           className="mx-auto inline-flex size-14 items-center justify-center rounded-2xl bg-primary/15 text-primary ring-1 ring-primary/30"
           aria-hidden

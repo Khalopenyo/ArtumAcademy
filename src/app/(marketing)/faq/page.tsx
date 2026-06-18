@@ -62,10 +62,10 @@ export default function FaqPage() {
         <p className="mt-2 text-sm text-primary-light/70">Не нашли ответ? Напишите на support@artumacademy.ru</p>
       </div>
 
-      <GlassCard className="mt-8 p-2 sm:p-4">
+      <GlassCard className="mt-8 p-3 sm:p-4">
         <Accordion type="single" collapsible className="w-full">
-          {FAQ.map((item, i) => (
-            <AccordionItem key={i} value={`item-${i}`} className="px-4">
+          {FAQ.map((item) => (
+            <AccordionItem key={item.q} value={item.q} className="px-4">
               <AccordionTrigger className="text-left text-base">{item.q}</AccordionTrigger>
               <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
                 {item.a}

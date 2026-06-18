@@ -36,7 +36,7 @@ export function Hero({ userFirstName }: HeroProps) {
       />
 
       <div className="relative max-w-2xl">
-        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-primary-light">
+        <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-primary-light">
           <Sparkles className="size-3.5" aria-hidden />
           {userFirstName ? `Привет, ${userFirstName}` : 'Онлайн-академия'}
         </span>
@@ -51,11 +51,11 @@ export function Hero({ userFirstName }: HeroProps) {
           Видеокурсы по нейросетям, фото, видео, монтажу, дизайну, визуалу
           и копирайтингу — от практиков индустрии.
         </p>
-        <div className="mt-6 flex flex-wrap gap-3">
+        <div className="mt-6 flex flex-col gap-2.5 sm:flex-row">
           {userFirstName ? (
             <Link
               href="/profile"
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 sm:w-auto"
             >
               <Play className="size-4" fill="currentColor" aria-hidden />
               Продолжить обучение
@@ -63,7 +63,7 @@ export function Hero({ userFirstName }: HeroProps) {
           ) : (
             <Link
               href="/register"
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 sm:w-auto"
             >
               <Play className="size-4" fill="currentColor" aria-hidden />
               Начать обучение
@@ -71,7 +71,7 @@ export function Hero({ userFirstName }: HeroProps) {
           )}
           <a
             href="#catalog"
-            className="inline-flex items-center gap-2 rounded-xl border border-primary/30 bg-transparent px-5 py-2.5 text-sm font-medium text-primary-light transition-all hover:border-primary hover:text-white"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-transparent px-5 py-2.5 text-sm font-medium text-primary-light transition-all hover:border-primary hover:text-foreground sm:w-auto"
           >
             <Eye className="size-4" aria-hidden />
             Смотреть каталог

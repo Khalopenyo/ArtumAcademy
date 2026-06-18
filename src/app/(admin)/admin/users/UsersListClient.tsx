@@ -187,7 +187,7 @@ export function UsersListClient({ users, courses }: UsersListClientProps) {
                       </td>
                       <td className="px-5 py-3 text-right">
                         {u.hasActiveSubscription ? (
-                          <span className="inline-flex items-center rounded-full bg-primary/15 px-2.5 py-0.5 text-[11px] font-medium text-primary">
+                          <span className="inline-flex items-center rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-medium text-primary">
                             активна
                           </span>
                         ) : (

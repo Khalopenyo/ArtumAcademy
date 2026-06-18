@@ -78,7 +78,7 @@ export function RevenueChart({ payments, months = 6 }: RevenueChartProps) {
                   aria-hidden
                 />
               </div>
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              <div className="text-xs uppercase tracking-wider text-muted-foreground">
                 {b.label}
               </div>
               <div className="text-xs tabular-nums">

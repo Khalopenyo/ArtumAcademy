@@ -244,14 +244,14 @@ function NameRow({ user }: { user: AuthUser }) {
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 p-5">
-      <div className="space-y-1">
+      <div className="min-w-0 space-y-1">
         <div className="text-sm font-medium">Имя</div>
         {editing ? (
           <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
             disabled={pending}
-            className="min-w-[16rem]"
+            className="w-full sm:max-w-[16rem] sm:min-w-[16rem]"
           />
         ) : (
           <div className="text-sm text-muted-foreground">{user.name}</div>
@@ -306,7 +306,7 @@ function EmailRow({ user }: { user: AuthUser }) {
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 p-5">
-      <div className="space-y-1">
+      <div className="min-w-0 space-y-1">
         <div className="text-sm font-medium">Email</div>
         {editing ? (
           <Input
@@ -314,7 +314,7 @@ function EmailRow({ user }: { user: AuthUser }) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={pending}
-            className="min-w-[16rem]"
+            className="w-full sm:max-w-[16rem] sm:min-w-[16rem]"
             autoComplete="email"
           />
         ) : (

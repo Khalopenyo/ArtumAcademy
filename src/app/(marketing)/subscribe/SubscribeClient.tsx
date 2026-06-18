@@ -220,10 +220,10 @@ function PlanCard({
   return (
     <div className="relative flex h-full flex-col gap-4 rounded-2xl border border-border/60 bg-card/60 p-6 backdrop-blur-xl">
       <div>
-        <div className="flex items-center gap-2">
-          <h2 className="text-xl font-bold">{plan.name}</h2>
+        <div className="flex min-w-0 items-center gap-2">
+          <h2 className="min-w-0 truncate text-xl font-bold">{plan.name}</h2>
           {plan.isAllCourses ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-0.5 text-[11px] font-medium text-primary">
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-medium text-primary">
               <Sparkles className="size-3" aria-hidden /> Всё
             </span>
           ) : null}
@@ -233,7 +233,7 @@ function PlanCard({
         ) : null}
       </div>
 
-      <div className="bg-gradient-to-br from-white to-primary-lighter bg-clip-text text-3xl font-bold text-transparent">
+      <div className="bg-gradient-to-br from-white to-primary-lighter bg-clip-text text-2xl font-bold text-transparent sm:text-3xl">
         {priceMinor > 0 ? formatPrice(priceMinor) : '—'}
         <span className="ml-1 bg-none text-sm font-normal text-muted-foreground [-webkit-text-fill-color:initial]">
           / {period === 'monthly' ? 'мес' : 'год'}
@@ -248,8 +248,8 @@ function PlanCard({
           </>
         ) : (
           <>
-            {plan.courseTitles.slice(0, 6).map((t, i) => (
-              <Feature key={i}>{t}</Feature>
+            {plan.courseTitles.slice(0, 6).map((t) => (
+              <Feature key={t}>{t}</Feature>
             ))}
             {plan.courseTitles.length > 6 ? (
               <li className="pl-6 text-xs text-muted-foreground">
@@ -276,7 +276,7 @@ function Feature({ children }: { children: React.ReactNode }) {
   return (
     <li className="flex items-start gap-2">
       <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
-      <span className="text-muted-foreground">{children}</span>
+      <span className="min-w-0 line-clamp-2 text-muted-foreground">{children}</span>
     </li>
   );
 }

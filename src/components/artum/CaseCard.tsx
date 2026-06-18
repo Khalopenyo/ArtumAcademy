@@ -40,7 +40,7 @@ export function CaseCard({ caseItem }: { caseItem: Case }) {
         )}
         <span
           className={cn(
-            'pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1 rounded-md border border-white/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider backdrop-blur',
+            'pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1 rounded-md border border-white/10 px-2 py-1 text-xs font-semibold uppercase tracking-wider backdrop-blur',
             category.tagBgClass,
             category.tagTextClass,
           )}
@@ -58,14 +58,14 @@ export function CaseCard({ caseItem }: { caseItem: Case }) {
           <p className="text-xs font-medium text-primary-light">{caseItem.studentName}</p>
         ) : null}
         {caseItem.description ? (
-          <p className="line-clamp-4 text-[13px] leading-relaxed text-muted-foreground">
+          <p className="line-clamp-4 text-sm leading-relaxed text-muted-foreground">
             {caseItem.description}
           </p>
         ) : null}
         {caseItem.result ? (
           <div className="mt-auto flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/10 p-2.5">
             <Trophy className="mt-0.5 size-4 shrink-0 text-primary-light" aria-hidden />
-            <span className="text-[13px] font-medium text-primary-lighter">{caseItem.result}</span>
+            <span className="text-sm font-medium text-primary-lighter">{caseItem.result}</span>
           </div>
         ) : null}
       </div>
