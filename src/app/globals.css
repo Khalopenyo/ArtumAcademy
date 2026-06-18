@@ -49,7 +49,12 @@
     --input: 240 9% 18%;
     --ring: 271 91% 65%;
 
-    --radius: 0.75rem;
+    /* Явная шкала радиусов (бриф): sm 8 / DEFAULT 12 / lg 16 / xl 24.
+       Карточки (rounded-2xl) и крупные поверхности тянутся к xl=24px. */
+    --radius: 0.75rem; /* 12px — DEFAULT */
+    --radius-sm: 0.5rem; /* 8px  */
+    --radius-lg: 1rem; /* 16px */
+    --radius-xl: 1.5rem; /* 24px */
 
     /* Цветные теги категорий (ТЗ §2 таблица 2) */
     --tag-ai: 271 91% 65%;          /* #A855F7 */
@@ -85,6 +90,15 @@
       'Segoe UI', Roboto, sans-serif;
   }
 
+  /* Заголовки — геометрический дисплейный Unbounded («космический» характер).
+     Только крупные h1/h2; мелкие h3 в карточках остаются на чистом Onest —
+     так держим компактность и читабельность. */
+  h1,
+  h2 {
+    font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
+    letter-spacing: -0.02em;
+  }
+
   /* Плавная подсветка фокуса для всего интерактивного */
   :focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
@@ -92,12 +106,14 @@
 }
 
 @layer components {
-  /* Карточка курса с фиолетовой подсветкой при hover (ТЗ §4.2) */
+  /* Карточка с премиум-интеракцией: мягкий подъём + фиолетовое свечение,
+     подсветка бордера. Плавнее и «дороже» прежнего жёсткого ring (ТЗ §4.2). */
   .course-card-hover {
-    @apply transition-all duration-200;
+    @apply transition-all duration-300 ease-out;
   }
   .course-card-hover:hover {
-    @apply ring-2 ring-primary/60 ring-offset-2 ring-offset-background -translate-y-0.5;
+    @apply -translate-y-1 border-primary/60;
+    box-shadow: 0 14px 38px -12px rgba(168, 85, 247, 0.45);
   }
 }
 
@@ -154,13 +170,8 @@
     opacity: 0;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .cosmic-star {
-    animation: none !important;
-    opacity: var(--star-o, 0.5) !important;
-  }
-  .cosmic-comet {
-    animation: none !important;
-    opacity: 0 !important;
-  }
-}
+/* Космический фон намеренно анимируется всегда — даже при
+   prefers-reduced-motion. Эффект чисто декоративный (aria-hidden,
+   pointer-events-none), а движение крайне мягкое: дрейф звёзд ±16px за
+   12–26с и редкие тонкие кометы. Прежний reduced-motion-гард замораживал
+   звёзды и прятал кометы на Windows с выключенными «эффектами анимации». */

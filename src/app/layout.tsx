@@ -1,12 +1,16 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { Onest, Unbounded } from 'next/font/google';
 import { Toaster } from 'sonner';
 
 import { CookieConsent } from '@/components/shared/CookieConsent';
 import { CosmicBackground } from '@/components/shared/CosmicBackground';
 import './globals.css';
 
-const inter = Inter({ subsets: ['latin', 'cyrillic'], variable: '--font-sans' });
+// Тело — чистый гротеск Onest (кириллица-first). Заголовки — геометрический
+// дисплейный Unbounded для «космического» характера. Оба — variable-шрифты,
+// поэтому weight не фиксируем (грузится вся ось).
+const onest = Onest({ subsets: ['latin', 'cyrillic'], variable: '--font-sans' });
+const unbounded = Unbounded({ subsets: ['latin', 'cyrillic'], variable: '--font-display' });
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ?? 'https://artumacademy.ru';
@@ -100,7 +104,11 @@ export const viewport: Viewport = {
  */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru" className={`${inter.variable} dark`} suppressHydrationWarning>
+    <html
+      lang="ru"
+      className={`${onest.variable} ${unbounded.variable} dark`}
+      suppressHydrationWarning
+    >
       <body className="min-h-screen font-sans text-foreground antialiased">
         <CosmicBackground />
         <script

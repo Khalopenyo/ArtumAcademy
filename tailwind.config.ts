@@ -62,10 +62,19 @@ const config: Config = {
   				copy: 'hsl(var(--tag-copy))'
   			}
   		},
+  		fontFamily: {
+  			sans: ['var(--font-sans)', 'system-ui', '-apple-system', 'sans-serif'],
+  			display: ['var(--font-display)', 'var(--font-sans)', 'system-ui', 'sans-serif']
+  		},
+  		/* Явная token-шкала радиусов: sm 8 / DEFAULT·md 12 / lg 16 / xl·2xl·3xl 24 */
   		borderRadius: {
-  			lg: 'var(--radius)',
-  			md: 'calc(var(--radius) - 2px)',
-  			sm: 'calc(var(--radius) - 4px)'
+  			sm: 'var(--radius-sm)',
+  			DEFAULT: 'var(--radius)',
+  			md: 'var(--radius)',
+  			lg: 'var(--radius-lg)',
+  			xl: 'var(--radius-xl)',
+  			'2xl': 'var(--radius-xl)',
+  			'3xl': 'var(--radius-xl)'
   		},
   		keyframes: {
   			'accordion-down': {
