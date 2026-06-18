@@ -14,7 +14,7 @@ import {
 import { getCourseReviews, getMyReviewForCourse } from '@/server/queries/reviews';
 import { getCurrentUser } from '@/server/queries/auth';
 
-import CoursePageClient from './CoursePageClient';
+import { CoursePageClient } from './CoursePageClient';
 
 /**
  * Страница курса (Server Component).

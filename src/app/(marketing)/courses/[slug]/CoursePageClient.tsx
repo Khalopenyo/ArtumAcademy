@@ -41,7 +41,7 @@ interface CoursePageClientProps {
   myReview: Review | null;
 }
 
-export default function CoursePageClient({
+export function CoursePageClient({
   course,
   similar,
   isLoggedIn,
@@ -147,8 +147,14 @@ export default function CoursePageClient({
     ctaLabel = 'Курс пройден';
   }
 
+  // Липкая нижняя панель (мобайл): показываем, когда есть осмысленное действие.
+  const showBar = Boolean(ctaHref || ctaOnClick);
+  const finalPriceMinor = Math.max(0, course.priceMinor - (appliedPromo?.discountMinor ?? 0));
+
   return (
-    <div className="container mx-auto px-4 py-8 sm:py-10">
+    <div
+      className={cn('container mx-auto px-4 py-8 sm:py-10', showBar && 'pb-28 lg:pb-10')}
+    >
       <Link
         href="/"
         className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -218,8 +224,8 @@ export default function CoursePageClient({
             <section className="space-y-4 rounded-2xl border border-border/60 bg-card/40 p-6 backdrop-blur-xl">
               <h2 className="text-lg font-semibold">Чему вы научитесь</h2>
               <ul className="grid gap-2.5 sm:grid-cols-2">
-                {course.learningOutcomes.map((o, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                {course.learningOutcomes.map((o) => (
+                  <li key={o} className="flex items-start gap-2 text-sm text-muted-foreground">
                     <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
                     <span>{o}</span>
                   </li>
@@ -548,6 +554,70 @@ export default function CoursePageClient({
           </GlassCard>
         </aside>
       </div>
+
+      {/* Липкая нижняя панель цена + CTA (мобайл/планшет). На lg прячется —
+          там цена/кнопка в sticky-сайдбаре. Для залогиненных встаёт НАД
+          таб-баром (bottom = высота таб-бара), для гостя — bottom-0. */}
+      {showBar ? (
+        <div
+          className={cn(
+            'fixed inset-x-0 z-40 border-t border-border/60 bg-[#0A0618]/90 backdrop-blur-xl lg:hidden',
+            isLoggedIn
+              ? 'bottom-[calc(3.5rem+env(safe-area-inset-bottom))]'
+              : 'bottom-0',
+          )}
+        >
+          <div
+            className={cn(
+              'container mx-auto flex items-center gap-3 px-4 py-3',
+              !isLoggedIn && 'pb-[calc(0.75rem+env(safe-area-inset-bottom))]',
+            )}
+          >
+            <div className="min-w-0 flex-1">
+              {purchased ? (
+                <>
+                  <div className="text-xs text-muted-foreground">Доступ открыт</div>
+                  <div className="text-lg font-bold leading-none">
+                    {progress.percent > 0 ? `Пройдено ${progress.percent}%` : 'Начните обучение'}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-xs text-muted-foreground">
+                    {appliedPromo
+                      ? `Скидка ${formatPrice(appliedPromo.discountMinor)}`
+                      : 'Полный доступ'}
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-lg font-bold leading-none">
+                      {formatPrice(finalPriceMinor)}
+                    </span>
+                    {appliedPromo ? (
+                      <span className="text-xs text-muted-foreground line-through">
+                        {formatPrice(course.priceMinor)}
+                      </span>
+                    ) : null}
+                  </div>
+                </>
+              )}
+            </div>
+            {ctaHref ? (
+              <Button asChild size="lg" className="shrink-0">
+                <Link href={ctaHref}>{ctaLabel}</Link>
+              </Button>
+            ) : (
+              <Button
+                size="lg"
+                className="shrink-0"
+                onClick={ctaOnClick ?? undefined}
+                disabled={pending}
+              >
+                {ctaLabel}
+              </Button>
+            )}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

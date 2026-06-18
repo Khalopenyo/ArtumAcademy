@@ -253,7 +253,7 @@ export function LessonPageClient({
             <div className="max-h-[60vh] overflow-y-auto">
               {ctx.course.modules.map((m, mIdx) => (
                 <div key={m.id}>
-                  <div className="sticky top-0 z-10 border-b border-border/50 bg-card/95 px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground backdrop-blur">
+                  <div className="sticky top-0 z-10 border-b border-border/50 bg-card/95 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground backdrop-blur">
                     Модуль {mIdx + 1}: {m.title}
                   </div>
                   <ul className="divide-y divide-border/60 text-sm">
@@ -300,6 +300,33 @@ export function LessonPageClient({
             </div>
           </div>
         </aside>
+      </div>
+
+      {/* Липкая нижняя панель «Следующий урок» (мобайл). Таб-бар на /learn
+          скрыт, поэтому панель встаёт на bottom-0; clearance даёт pb layout'а.
+          На md+ прячется — там кнопки навигации в контенте и боковой плейлист. */}
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-[#0A0618]/90 backdrop-blur-xl pb-[env(safe-area-inset-bottom)] md:hidden">
+        <div className="container mx-auto px-4 py-3">
+          {ctx.next ? (
+            <Button asChild size="lg" className="w-full">
+              <Link href={`/learn/${ctx.next.courseSlug}/${ctx.next.lessonId}`}>
+                Следующий урок
+                <ChevronRight className="ml-1 size-4" aria-hidden />
+              </Link>
+            </Button>
+          ) : completed ? (
+            <Button asChild size="lg" variant="secondary" className="w-full">
+              <Link href="/certificates">
+                <Check className="mr-1 size-4" aria-hidden />
+                Курс пройден — к сертификату
+              </Link>
+            </Button>
+          ) : (
+            <Button size="lg" className="w-full" onClick={handleToggleComplete}>
+              Отметить пройденным
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );
