@@ -22,7 +22,11 @@ export function CosmicBackground() {
     if (!el) return;
     // Очищаем при HMR / перерендере
     el.innerHTML = '';
-    const count = 240;
+    // Уважаем prefers-reduced-motion: оставляем мерцание (+ кометы), но
+    // отключаем дрейф (постоянный transform по сотням элементов) — это главный
+    // источник лагов при скролле под backdrop-blur на слабых/таких машинах.
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const count = reduceMotion ? 110 : 150;
     for (let i = 0; i < count; i++) {
       const star = document.createElement('div');
       star.className = 'cosmic-star';
@@ -35,6 +39,12 @@ export function CosmicBackground() {
       const driftX = (Math.random() * 32 - 16).toFixed(1); // −16…+16px
       const driftY = (Math.random() * 32 - 16).toFixed(1); // −16…+16px
       const delay = (Math.random() * 5).toFixed(2);
+      // Под reduced-motion — только мерцание (opacity); иначе + мягкий дрейф.
+      // Без will-change: сотни постоянных слоёв давали лаги, браузер сам
+      // композитит opacity/transform-анимации эффективнее.
+      const animation = reduceMotion
+        ? `starTwinkle ${twinkle}s ease-in-out ${delay}s infinite`
+        : `starTwinkle ${twinkle}s ease-in-out ${delay}s infinite, starDrift ${drift}s ease-in-out ${delay}s infinite alternate`;
       star.style.cssText = `
         position: absolute;
         left: ${Math.random() * 100}%;
@@ -48,8 +58,7 @@ export function CosmicBackground() {
         --star-o: ${opacity};
         --drift-x: ${driftX}px;
         --drift-y: ${driftY}px;
-        animation: starTwinkle ${twinkle}s ease-in-out ${delay}s infinite, starDrift ${drift}s ease-in-out ${delay}s infinite alternate;
-        will-change: opacity, transform;
+        animation: ${animation};
       `;
       el.appendChild(star);
     }
