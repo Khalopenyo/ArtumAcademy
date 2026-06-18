@@ -1,6 +1,6 @@
 import { getAllPlansForAdmin } from '@/server/queries/subscription-plans';
 
-import SubscriptionPlansClient from './SubscriptionPlansClient';
+import { SubscriptionPlansClient } from './SubscriptionPlansClient';
 
 /** Список планов подписки в админке (Server Component). */
 export const dynamic = 'force-dynamic';

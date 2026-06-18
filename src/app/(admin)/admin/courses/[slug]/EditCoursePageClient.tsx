@@ -29,7 +29,7 @@ interface EditCoursePageClientProps {
   course: Course;
 }
 
-export default function EditCoursePageClient({ course }: EditCoursePageClientProps) {
+export function EditCoursePageClient({ course }: EditCoursePageClientProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [mode, setMode] = useState<EditMode>('meta');

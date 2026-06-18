@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 
 import { getCourseBySlugForAdmin } from '@/server/queries/catalog';
 
-import EditCoursePageClient from './EditCoursePageClient';
+import { EditCoursePageClient } from './EditCoursePageClient';
 
 /**
  * Admin: edit course (Server Component).

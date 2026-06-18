@@ -1,6 +1,6 @@
 import { getAllCasesForAdmin } from '@/server/queries/cases';
 
-import AdminCasesClient from './AdminCasesClient';
+import { AdminCasesClient } from './AdminCasesClient';
 
 /**
  * Список кейсов в админке (Server Component).

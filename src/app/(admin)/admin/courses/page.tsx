@@ -1,6 +1,6 @@
 import { getAllCoursesForAdmin } from '@/server/queries/catalog';
 
-import AdminCoursesClient from './AdminCoursesClient';
+import { AdminCoursesClient } from './AdminCoursesClient';
 
 /**
  * Список курсов в админке (Server Component).

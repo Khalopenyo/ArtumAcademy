@@ -11,7 +11,7 @@ import type { AdminReviewRow } from '@/server/queries/reviews';
 import { deleteReviewAction } from '@/server/actions/admin/reviews';
 import { cn } from '@/lib/utils';
 
-export default function AdminReviewsClient({ initialReviews }: { initialReviews: AdminReviewRow[] }) {
+export function AdminReviewsClient({ initialReviews }: { initialReviews: AdminReviewRow[] }) {
   const router = useRouter();
   const reviews = useMemo(() => initialReviews, [initialReviews]);
 

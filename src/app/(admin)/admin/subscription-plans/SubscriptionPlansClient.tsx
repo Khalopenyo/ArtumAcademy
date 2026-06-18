@@ -11,7 +11,7 @@ import { formatPrice } from '@/lib/mock/courses';
 import type { AdminPlanRow } from '@/server/queries/subscription-plans';
 import { deletePlanAction } from '@/server/actions/admin/subscription-plans';
 
-export default function SubscriptionPlansClient({ initialPlans }: { initialPlans: AdminPlanRow[] }) {
+export function SubscriptionPlansClient({ initialPlans }: { initialPlans: AdminPlanRow[] }) {
   const router = useRouter();
   const plans = useMemo(() => initialPlans, [initialPlans]);
 
@@ -70,7 +70,7 @@ export default function SubscriptionPlansClient({ initialPlans }: { initialPlans
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{p.name}</span>
                       {p.published === false ? (
-                        <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-500">
+                        <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-amber-500">
                           Черновик
                         </span>
                       ) : null}
@@ -119,7 +119,7 @@ export default function SubscriptionPlansClient({ initialPlans }: { initialPlans
                     <div className="flex items-center gap-2">
                       <span className="truncate font-medium">{p.name}</span>
                       {p.published === false ? (
-                        <span className="shrink-0 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-500">
+                        <span className="shrink-0 rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-amber-500">
                           Черновик
                         </span>
                       ) : null}

@@ -22,7 +22,7 @@ interface AdminCoursesClientProps {
   initialCourses: Course[];
 }
 
-export default function AdminCoursesClient({ initialCourses }: AdminCoursesClientProps) {
+export function AdminCoursesClient({ initialCourses }: AdminCoursesClientProps) {
   const router = useRouter();
   // initialCourses уже актуальный server-fetch (источник правды — Supabase),
   // никаких store-мерджей больше нет.
@@ -116,7 +116,7 @@ export default function AdminCoursesClient({ initialCourses }: AdminCoursesClien
                           {c.title}
                         </Link>
                         {c.published === false ? (
-                          <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-500">
+                          <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-amber-500">
                             Черновик
                           </span>
                         ) : null}
@@ -191,7 +191,7 @@ export default function AdminCoursesClient({ initialCourses }: AdminCoursesClien
                           {c.title}
                         </Link>
                         {c.published === false ? (
-                          <span className="shrink-0 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-500">
+                          <span className="shrink-0 rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-amber-500">
                             Черновик
                           </span>
                         ) : null}

@@ -1,6 +1,6 @@
 import { getAllReviewsForAdmin } from '@/server/queries/reviews';
 
-import AdminReviewsClient from './AdminReviewsClient';
+import { AdminReviewsClient } from './AdminReviewsClient';
 
 /** Модерация отзывов (Server Component). */
 export const dynamic = 'force-dynamic';

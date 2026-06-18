@@ -17,7 +17,7 @@ interface AdminCasesClientProps {
   initialCases: Case[];
 }
 
-export default function AdminCasesClient({ initialCases }: AdminCasesClientProps) {
+export function AdminCasesClient({ initialCases }: AdminCasesClientProps) {
   const router = useRouter();
   const allCases = useMemo(() => initialCases, [initialCases]);
   const [filter, setFilter] = useState<CategoryId | 'all'>('all');
@@ -97,7 +97,7 @@ export default function AdminCasesClient({ initialCases }: AdminCasesClientProps
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{c.title}</span>
                         {c.published === false ? (
-                          <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-500">
+                          <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-amber-500">
                             Черновик
                           </span>
                         ) : null}
@@ -155,7 +155,7 @@ export default function AdminCasesClient({ initialCases }: AdminCasesClientProps
                       <div className="flex items-center gap-2">
                         <span className="truncate font-medium">{c.title}</span>
                         {c.published === false ? (
-                          <span className="shrink-0 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-500">
+                          <span className="shrink-0 rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-amber-500">
                             Черновик
                           </span>
                         ) : null}
