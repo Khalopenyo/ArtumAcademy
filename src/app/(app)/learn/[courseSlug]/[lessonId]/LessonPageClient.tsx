@@ -9,7 +9,9 @@ import { Check, ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CategoryIcon } from '@/components/artum/CategoryIcon';
 import { LessonPlayer } from '@/components/artum/LessonPlayer';
+import { QuizRunner } from '@/components/artum/QuizRunner';
 import { formatDuration, getCategory } from '@/lib/mock/courses';
+import type { PublicQuiz } from '@/lib/quiz';
 import {
   markLessonCompleteAction,
   recordWatchProgressAction,
@@ -25,6 +27,8 @@ interface LessonPageClientProps {
   startPositionSec: number;
   /** Email зрителя — водяной знак поверх Kinescope-видео (анти-пиратство). */
   watermarkText?: string;
+  /** Публичный тест урока (без правильных ответов). null = нет теста. */
+  quiz?: PublicQuiz | null;
 }
 
 export function LessonPageClient({
@@ -32,6 +36,7 @@ export function LessonPageClient({
   completedLessonIds,
   startPositionSec,
   watermarkText,
+  quiz,
 }: LessonPageClientProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -136,10 +141,10 @@ export function LessonPageClient({
         К курсу «{ctx.course.title}»
       </Link>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-3">
         {/* Левая колонка — видео + контролы */}
-        <div className="space-y-4 lg:col-span-2">
-          {ctx.lesson.videoUrl || !ctx.lesson.content?.trim() ? (
+        <div className="space-y-4 md:col-span-2">
+          {ctx.lesson.videoUrl || (!ctx.lesson.content?.trim() && !quiz) ? (
             <LessonPlayer
               videoUrl={ctx.lesson.videoUrl}
               startPositionSec={startPositionSec}
@@ -180,6 +185,10 @@ export function LessonPageClient({
               // строгий allowlist) — все записи идут только через updateLessonAction.
               dangerouslySetInnerHTML={{ __html: ctx.lesson.content }}
             />
+          ) : null}
+
+          {quiz ? (
+            <QuizRunner lessonId={ctx.lesson.id} quiz={quiz} alreadyPassed={completed} />
           ) : null}
 
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/60 p-4 backdrop-blur-xl">
@@ -229,7 +238,7 @@ export function LessonPageClient({
         </div>
 
         {/* Правая колонка — список уроков */}
-        <aside className="lg:col-span-1">
+        <aside className="md:col-span-1">
           <div className="sticky top-24 overflow-hidden rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xl">
             <div className="border-b border-border/50 p-4">
               <div className="text-xs uppercase tracking-wider text-muted-foreground">

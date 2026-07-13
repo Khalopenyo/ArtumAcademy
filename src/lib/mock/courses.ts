@@ -71,6 +71,9 @@ export interface Lesson {
   videoUrl: string | null;
   /** HTML-контент урока (текст + картинки), санитизированный. null = нет. */
   content?: string | null;
+  /** Есть ли у урока тест. Сами вопросы грузятся отдельно (админ — полный,
+   *  студент — без правильных ответов), в этот тип они НЕ кладутся. */
+  hasQuiz?: boolean;
 }
 
 export interface Module {
