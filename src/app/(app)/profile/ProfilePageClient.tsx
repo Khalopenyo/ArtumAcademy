@@ -324,16 +324,16 @@ function ProfileInner({
                           : 'Платёж';
                     return (
                       <tr key={p.id} className="hover:bg-secondary/50">
-                        <td className="px-5 py-3">
+                        <td className="max-w-0 px-5 py-3">
                           {p.courseSlug && p.method !== 'subscription' ? (
                             <Link
                               href={`/courses/${p.courseSlug}`}
-                              className="font-medium transition-colors hover:text-primary"
+                              className="block truncate font-medium transition-colors hover:text-primary"
                             >
                               {title}
                             </Link>
                           ) : (
-                            <span className="font-medium">{title}</span>
+                            <span className="block truncate font-medium">{title}</span>
                           )}
                         </td>
                         <td className="px-5 py-3 text-muted-foreground">

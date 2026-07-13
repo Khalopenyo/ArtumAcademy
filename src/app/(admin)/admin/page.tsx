@@ -65,7 +65,7 @@ export default async function AdminHomePage() {
       </section>
 
       {/* Каталог и аудитория — компактно, второй уровень */}
-      <section className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <section className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
         <MiniStat
           label="Пользователей"
           value={String(stats.totalUsers)}

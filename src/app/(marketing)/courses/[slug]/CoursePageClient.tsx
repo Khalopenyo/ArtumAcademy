@@ -163,9 +163,9 @@ export function CoursePageClient({
         К каталогу курсов
       </Link>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
         {/* Левая колонка — описание + уроки */}
-        <div className="space-y-8 lg:col-span-2">
+        <div className="space-y-8 md:col-span-2">
           <div className="overflow-hidden rounded-2xl border border-border/60">
             <div className="relative h-44 w-full overflow-hidden sm:h-56">
               <CourseCover coverUrl={course.coverUrl} gradient={course.coverGradient} />
@@ -405,7 +405,7 @@ export function CoursePageClient({
         </div>
 
         {/* Правая колонка — sticky CTA card */}
-        <aside className="lg:col-span-1">
+        <aside className="md:col-span-1">
           <GlassCard glow className="sticky top-24 space-y-4 p-6">
             <div className="space-y-1">
               <div className="text-xs uppercase tracking-wider text-muted-foreground">
@@ -561,7 +561,7 @@ export function CoursePageClient({
       {showBar ? (
         <div
           className={cn(
-            'fixed inset-x-0 z-40 border-t border-border/60 bg-[#0A0618]/90 backdrop-blur-xl lg:hidden',
+            'fixed inset-x-0 z-40 border-t border-border/60 bg-[#0A0618]/90 backdrop-blur-xl md:hidden',
             isLoggedIn
               ? 'bottom-[calc(3.5rem+env(safe-area-inset-bottom))]'
               : 'bottom-0',

@@ -88,6 +88,11 @@
   html {
     font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont,
       'Segoe UI', Roboto, sans-serif;
+    /* Защита от случайного горизонтального скролла (закрытый off-screen
+       drawer через translate-x-full, transform-элементы). Ставим на html,
+       т.к. body не клипает fixed-потомков. clip (не hidden) не создаёт
+       scroll-контейнер → position: sticky продолжает работать. */
+    overflow-x: clip;
   }
 
   /* Заголовки — геометрический дисплейный Unbounded («космический» характер).

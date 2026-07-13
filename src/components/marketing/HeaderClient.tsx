@@ -311,7 +311,7 @@ function NotificationButton({ notifications }: { notifications: NotificationReco
           ) : null}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80">
+      <DropdownMenuContent align="end" className="w-[min(20rem,calc(100vw-1.5rem))]">
         <DropdownMenuLabel>Уведомления</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {items.length === 0 ? (
@@ -378,7 +378,7 @@ function UserMenu({ user }: { user: AuthUser }) {
           <AvatarPill initials={user.initials} small />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuContent align="end" className="w-[min(14rem,calc(100vw-1.5rem))]">
         <DropdownMenuLabel>
           <div className="text-sm font-medium">{user.name}</div>
           <div className="truncate text-xs text-muted-foreground">{user.email}</div>

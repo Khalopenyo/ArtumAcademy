@@ -72,11 +72,11 @@ export default function RequisitesPage() {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-4">
-      <dt className="w-32 shrink-0 text-xs uppercase tracking-wider text-muted-foreground">
+    <div className="flex flex-col gap-0.5 py-3 sm:flex-row sm:items-center sm:gap-3">
+      <dt className="shrink-0 text-xs uppercase tracking-wider text-muted-foreground sm:w-32">
         {label}
       </dt>
-      <dd className="text-sm font-medium text-foreground">{children}</dd>
+      <dd className="min-w-0 break-words text-sm font-medium text-foreground">{children}</dd>
     </div>
   );
 }
