@@ -8,6 +8,7 @@ import { auditLog } from '@/lib/audit-log';
 import { logger } from '@/lib/logger';
 import { notify } from '@/server/notifications';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { gradeQuiz, type Quiz } from '@/lib/quiz';
 import { createPayment, yookassaConfigured } from '@/lib/yookassa/client';
 import { getCurrentUser } from '@/server/queries/auth';
 import { getMyActiveSubscription } from '@/server/queries/commerce';
@@ -361,6 +362,93 @@ export async function unmarkLessonAction(lessonId: string): Promise<ActionResult
 /**
  * Сохраняет позицию воспроизведения видео. Авто-mark complete при >= 95%.
  */
+/**
+ * Приём и проверка ответов теста. Проверка — строго на сервере (верные ответы
+ * клиенту не уходят). Пишет попытку в quiz_attempts; при сдаче (>= порога)
+ * отмечает урок пройденным → RPC maybe_issue_certificate (как обычный урок).
+ * Попытки не ограничены.
+ */
+export async function submitQuizAction(
+  lessonId: string,
+  answers: Record<string, string[]>,
+): Promise<
+  ActionResult<{
+    score: number;
+    maxScore: number;
+    percent: number;
+    passed: boolean;
+    perQuestion: { questionId: string; correct: boolean }[];
+  }>
+> {
+  const auth = await getOrFail();
+  if (!auth.ok) return auth;
+
+  if (!z.string().uuid().safeParse(lessonId).success) {
+    return { ok: false, error: 'Невалидный lesson id' };
+  }
+
+  const access = await assertLessonAccess(auth.userId, lessonId);
+  if (!access.ok) return access;
+
+  const admin = createAdminClient();
+  const { data: lessonRow, error: lessonErr } = await admin
+    .from('lessons')
+    .select('quiz')
+    .eq('id', lessonId)
+    .maybeSingle();
+  if (lessonErr) return { ok: false, error: lessonErr.message };
+
+  const quiz = (lessonRow?.quiz ?? null) as Quiz | null;
+  if (!quiz || !Array.isArray(quiz.questions) || quiz.questions.length === 0) {
+    return { ok: false, error: 'У урока нет теста' };
+  }
+
+  // Нормализуем входные ответы к Record<string, string[]>
+  const safeAnswers: Record<string, string[]> = {};
+  if (answers && typeof answers === 'object') {
+    for (const [qid, val] of Object.entries(answers)) {
+      if (Array.isArray(val)) safeAnswers[qid] = val.filter((x) => typeof x === 'string');
+    }
+  }
+
+  const grade = gradeQuiz(quiz, safeAnswers);
+
+  await admin.from('quiz_attempts').insert({
+    user_id: auth.userId,
+    lesson_id: lessonId,
+    score: grade.score,
+    max_score: grade.maxScore,
+    passed: grade.passed,
+    answers: safeAnswers,
+  } as never);
+
+  if (grade.passed) {
+    await admin
+      .from('lesson_progress')
+      .upsert(
+        { user_id: auth.userId, lesson_id: lessonId },
+        { onConflict: 'user_id,lesson_id', ignoreDuplicates: true },
+      );
+    await admin.rpc('maybe_issue_certificate', {
+      p_user_id: auth.userId,
+      p_lesson_id: lessonId,
+    });
+    revalidatePath('/certificates');
+    revalidatePath('/profile');
+  }
+
+  return {
+    ok: true,
+    data: {
+      score: grade.score,
+      maxScore: grade.maxScore,
+      percent: grade.percent,
+      passed: grade.passed,
+      perQuestion: grade.perQuestion,
+    },
+  };
+}
+
 export async function recordWatchProgressAction(
   lessonId: string,
   positionSec: number,

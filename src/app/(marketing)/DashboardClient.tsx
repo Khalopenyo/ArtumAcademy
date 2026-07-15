@@ -266,7 +266,7 @@ function DashboardInner({
             </div>
             <nav
               aria-label="Категории курсов"
-              className="mt-2.5 flex gap-2 overflow-x-auto pb-0.5 [&>button]:shrink-0"
+              className="mt-2.5 flex gap-2 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>button]:shrink-0"
             >
               <CategoryPill
                 categoryId="all"

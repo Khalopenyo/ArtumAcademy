@@ -391,7 +391,7 @@ export function CourseForm({ initial }: CourseFormProps) {
 
       <div className="space-y-2">
         <Label>Обложка курса (картинка / GIF / видео)</Label>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
           <div className="relative h-20 w-36 shrink-0 overflow-hidden rounded-lg border border-border">
             <CourseCover coverUrl={coverUrl} gradient={coverGradient} />
           </div>

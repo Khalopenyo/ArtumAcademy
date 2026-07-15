@@ -212,8 +212,8 @@ export function UsersListClient({ users, courses }: UsersListClientProps) {
                         <td colSpan={8} className="px-5 py-4">
                           <div className="space-y-3">
                             {/* Роль */}
-                            <div className="flex flex-wrap items-center gap-3">
-                              <span className="w-28 text-sm text-muted-foreground">Роль:</span>
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                              <span className="w-full text-sm text-muted-foreground sm:w-28">Роль:</span>
                               {u.isAdmin ? (
                                 <Button
                                   size="sm"
@@ -243,7 +243,7 @@ export function UsersListClient({ users, courses }: UsersListClientProps) {
                               <select
                                 value={grantSlug}
                                 onChange={(e) => setGrantSlug(e.target.value)}
-                                className="h-9 min-w-[14rem] rounded-md border border-input bg-background px-3 text-sm"
+                                className="h-9 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm sm:w-auto sm:min-w-[14rem]"
                               >
                                 <option value="">— выберите курс —</option>
                                 {courses

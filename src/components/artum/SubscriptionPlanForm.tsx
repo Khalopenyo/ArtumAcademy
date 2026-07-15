@@ -201,7 +201,7 @@ export function SubscriptionPlanForm({ initial, allCourses }: SubscriptionPlanFo
             placeholder="Поиск курса по названию"
             className="h-9"
           />
-          <div className="max-h-72 space-y-1 overflow-y-auto rounded-lg border border-border p-2">
+          <div className="max-h-[45vh] space-y-1 overflow-y-auto rounded-lg border border-border p-2 sm:max-h-72">
             {visibleCourses.length === 0 ? (
               <p className="p-2 text-sm text-muted-foreground">Курсы не найдены.</p>
             ) : (

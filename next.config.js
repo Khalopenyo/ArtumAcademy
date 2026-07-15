@@ -23,6 +23,13 @@ const CSP = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Сборка идёт локально/в CI, на сервер уезжает минимальный self-contained
+  // артефакт (.next/standalone/server.js + только нужные node_modules через
+  // @vercel/nft). Сервер больше не запускает `npm ci`/`next build`, поэтому ему
+  // хватает ~1 ГБ RAM (рантайм ест ~150–500 МБ; билд — единственное, что требовало
+  // много памяти). standalone-сервер сам делает process.chdir(__dirname) и грузит
+  // .env.local из своей папки при старте (loadEnvConfig) — секреты подхватываются.
+  output: 'standalone',
   reactStrictMode: true,
   poweredByHeader: false,
   images: {

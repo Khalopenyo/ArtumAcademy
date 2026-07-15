@@ -3,6 +3,7 @@ import 'server-only';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createServerSupabase } from '@/lib/supabase/server';
 import type { CategoryId, Course, Module, Lesson } from '@/lib/mock/courses';
+import { stripAnswers, type PublicQuiz, type Quiz } from '@/lib/quiz';
 
 /**
  * Server queries для каталога курсов из Supabase.
@@ -50,6 +51,7 @@ interface LessonRow {
   duration_sec: number;
   video_url: string | null;
   content: string | null;
+  quiz: unknown;
   preview: boolean;
   order_index: number;
 }
@@ -94,6 +96,7 @@ function rowToLesson(row: LessonRow): Lesson {
     preview: row.preview,
     videoUrl: row.video_url,
     content: row.content,
+    hasQuiz: row.quiz != null,
   };
 }
 
@@ -253,4 +256,20 @@ export async function getCourseBySlugForAdmin(slug: string): Promise<Course | nu
       ),
     );
   return rowToCourse(row, modules);
+}
+
+/**
+ * Публичный тест урока для студента — БЕЗ правильных ответов (stripAnswers).
+ * Полный тест (с флагами correct) наружу не отдаётся никогда.
+ */
+export async function getLessonPublicQuiz(lessonId: string): Promise<PublicQuiz | null> {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from('lessons')
+    .select('quiz')
+    .eq('id', lessonId)
+    .maybeSingle();
+  const quiz = (data?.quiz ?? null) as Quiz | null;
+  if (!quiz || !Array.isArray(quiz.questions) || quiz.questions.length === 0) return null;
+  return stripAnswers(quiz);
 }

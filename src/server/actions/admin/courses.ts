@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { CategoryId } from '@/lib/mock/courses';
+import { quizSchema, type Quiz } from '@/lib/quiz';
 import { getCurrentUser } from '@/server/queries/auth';
 
 /**
@@ -285,6 +286,38 @@ export async function updateLessonAction(
   return { ok: true };
 }
 
+/**
+ * Сохраняет/убирает тест урока. quiz=null → снять тест.
+ * Проверка админ-прав + Zod-валидация структуры теста (quizSchema).
+ */
+export async function updateLessonQuizAction(
+  lessonId: string,
+  quiz: unknown,
+  courseSlug: string,
+): Promise<ActionResult> {
+  const guard = await assertAdmin();
+  if (!guard.ok) return guard;
+  if (!z.string().uuid().safeParse(lessonId).success) {
+    return { ok: false, error: 'Невалидный lesson id' };
+  }
+  let value: unknown = null;
+  if (quiz !== null && quiz !== undefined) {
+    const parsed = quizSchema.safeParse(quiz);
+    if (!parsed.success) {
+      return { ok: false, error: parsed.error.issues[0]?.message ?? 'Невалидный тест' };
+    }
+    value = parsed.data;
+  }
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from('lessons')
+    .update({ quiz: value } as never)
+    .eq('id', lessonId);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath(`/courses/${courseSlug}`);
+  return { ok: true };
+}
+
 export async function deleteLessonAction(
   lessonId: string,
   courseSlug: string,
@@ -313,4 +346,22 @@ export async function reorderLessonsAction(
   if (firstError) return { ok: false, error: firstError.message };
   revalidatePath(`/courses/${courseSlug}`);
   return { ok: true };
+}
+
+/**
+ * Отдаёт полный тест урока (с правильными ответами) для редактирования — только админу.
+ */
+export async function getLessonQuizAction(
+  lessonId: string,
+): Promise<{ ok: true; quiz: Quiz | null } | { ok: false; error: string }> {
+  const guard = await assertAdmin();
+  if (!guard.ok) return guard;
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from('lessons')
+    .select('quiz')
+    .eq('id', lessonId)
+    .maybeSingle();
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, quiz: (data?.quiz ?? null) as Quiz | null };
 }

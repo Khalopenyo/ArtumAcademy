@@ -18,7 +18,7 @@ interface FooterProps {
 export function Footer({ className }: FooterProps) {
   return (
     <footer className={cn('mt-auto border-t border-border/40 bg-[#06040F]/60 backdrop-blur-md', className)}>
-      <div className="container mx-auto grid grid-cols-2 gap-6 px-4 py-8 sm:px-9 md:grid-cols-[1.5fr_1fr_1fr_1fr_1.2fr]">
+      <div className="container mx-auto grid grid-cols-2 gap-6 px-4 py-8 sm:grid-cols-3 sm:px-9 lg:grid-cols-[1.5fr_1fr_1fr_1fr_1.2fr]">
         {/* Бренд */}
         <div className="space-y-3">
           <div className="text-[14px] font-bold tracking-[0.04em]">

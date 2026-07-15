@@ -34,9 +34,9 @@ export function VerifyForm() {
             onChange={(e) => setNum(e.target.value)}
             placeholder="ART-2026-..."
             aria-label="Номер сертификата"
-            className="h-11 border-border/60 bg-background/40 text-center font-mono backdrop-blur sm:text-left"
+            className="h-11 w-full min-w-0 border-border/60 bg-background/40 text-center font-mono backdrop-blur sm:flex-1 sm:text-left"
           />
-          <Button type="submit" size="lg" className="h-11 shrink-0" disabled={!num.trim()}>
+          <Button type="submit" size="lg" className="h-11 w-full sm:w-auto" disabled={!num.trim()}>
             Проверить
           </Button>
         </form>

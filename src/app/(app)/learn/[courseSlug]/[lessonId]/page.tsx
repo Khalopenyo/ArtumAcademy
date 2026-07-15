@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 import { requireUser } from '@/server/queries/auth';
-import { getCourseBySlugFromDb } from '@/server/queries/catalog';
+import { getCourseBySlugFromDb, getLessonPublicQuiz } from '@/server/queries/catalog';
 import {
   getMyCompletedLessonIds,
   getMyWatchPositions,
@@ -108,12 +108,16 @@ export default async function LessonPage({ params }: LessonPageProps) {
 
   const startPositionSec = watchPositions[ctx.lesson.id]?.positionSec ?? 0;
 
+  // Тест урока — только вопросы/варианты, БЕЗ правильных ответов.
+  const quiz = ctx.lesson.hasQuiz ? await getLessonPublicQuiz(ctx.lesson.id) : null;
+
   return (
     <LessonPageClient
       ctx={ctx}
       completedLessonIds={Array.from(completedLessonIds)}
       startPositionSec={startPositionSec}
       watermarkText={user.email}
+      quiz={quiz}
     />
   );
 }

@@ -361,6 +361,7 @@ export interface Database {
           duration_sec: number;
           video_url: string | null;
           content: string | null;
+          quiz: Json | null;
           preview: boolean;
           order_index: number;
           created_at: string;
@@ -372,6 +373,7 @@ export interface Database {
           duration_sec?: number;
           video_url?: string | null;
           content?: string | null;
+          quiz?: Json | null;
           preview?: boolean;
           order_index?: number;
           created_at?: string;
@@ -383,9 +385,44 @@ export interface Database {
           duration_sec?: number;
           video_url?: string | null;
           content?: string | null;
+          quiz?: Json | null;
           preview?: boolean;
           order_index?: number;
           created_at?: string;
+        };
+        Relationships: [];
+      };
+      // ─── Тесты уроков (migration 20260618000001) ─────────────────
+      quiz_attempts: {
+        Row: {
+          id: string;
+          user_id: string;
+          lesson_id: string;
+          score: number;
+          max_score: number;
+          passed: boolean;
+          answers: Json;
+          submitted_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          lesson_id: string;
+          score: number;
+          max_score: number;
+          passed: boolean;
+          answers?: Json;
+          submitted_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          lesson_id?: string;
+          score?: number;
+          max_score?: number;
+          passed?: boolean;
+          answers?: Json;
+          submitted_at?: string;
         };
         Relationships: [];
       };

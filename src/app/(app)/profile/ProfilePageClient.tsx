@@ -152,7 +152,7 @@ function ProfileInner({
       </section>
 
       <Tabs defaultValue={initialTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 sm:inline-flex sm:w-auto">
+        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 sm:inline-flex sm:h-10 sm:w-auto sm:gap-0">
           <TabsTrigger value="courses" className="gap-2">
             <BookOpen className="size-4" aria-hidden />
             <span className="hidden sm:inline">Мои курсы</span>
@@ -178,7 +178,7 @@ function ProfileInner({
             <span className="hidden sm:inline">История оплат</span>
             <span className="sm:hidden">Оплаты</span>
           </TabsTrigger>
-          <TabsTrigger value="settings" className="gap-2">
+          <TabsTrigger value="settings" className="col-span-2 gap-2 sm:col-span-1">
             <Settings className="size-4" aria-hidden />
             Настройки
           </TabsTrigger>
@@ -324,16 +324,16 @@ function ProfileInner({
                           : 'Платёж';
                     return (
                       <tr key={p.id} className="hover:bg-secondary/50">
-                        <td className="px-5 py-3">
+                        <td className="max-w-0 px-5 py-3">
                           {p.courseSlug && p.method !== 'subscription' ? (
                             <Link
                               href={`/courses/${p.courseSlug}`}
-                              className="font-medium transition-colors hover:text-primary"
+                              className="block truncate font-medium transition-colors hover:text-primary"
                             >
                               {title}
                             </Link>
                           ) : (
-                            <span className="font-medium">{title}</span>
+                            <span className="block truncate font-medium">{title}</span>
                           )}
                         </td>
                         <td className="px-5 py-3 text-muted-foreground">
